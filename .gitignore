@@ -1,0 +1,138 @@
+# Node.js / NextJS
+node_modules/
+.next/
+out/
+dist/
+build/
+.env.local
+.env.*.local
+.vercel/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.venv
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# ML/Deep Learning Models & Data
+*.h5
+*.pkl
+*.pickle
+*.joblib
+*.pt
+*.pth
+*.onnx
+weights/
+models/
+checkpoints/
+*.pb
+*.tflite
+*.ckpt
+*.meta
+*.index
+*.data*
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Data & Datasets
+data/
+datasets/
+raw_data/
+processed_data/
+*.csv
+*.xlsx
+*.xls
+*.parquet
+*.feather
+
+# Logs and outputs
+logs/
+*.log
+outputs/
+results/
+run*/
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+.vim/
+.emacs.d/
+
+# Environment
+.env
+.env.local
+.env.*.local
+.env.example
+secrets/
+credentials/
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Testing
+.nyc_output/
+coverage/
+*.lcov
+test-results/
+
+# Package Manager Lock Files (optional - uncomment if you want to commit them)
+# pnpm-lock.yaml
+# package-lock.json
+# poetry.lock
+
+# Miscellaneous
+*.bak
+*.tmp
+temp/
+tmp/
+*.zip
+*.tar.gz
+.turbo/
+.cache
+
+# ML Framework Specific
+lightning_logs/
+wandb/
+mlruns/
+.mlflow/
+runs/
+*.ckpt
