@@ -62,9 +62,9 @@ export function QueryBar({
   // Update description when speech transcript changes
   useEffect(() => {
     if (transcript) {
-      setDescription(prev => prev + transcript);
+      setDescription(`${description}${transcript}`);
     }
-  }, [transcript, setDescription]);
+  }, [transcript, description, setDescription]);
 
   // Detect query type when description changes
   useEffect(() => {
@@ -85,7 +85,9 @@ export function QueryBar({
   };
 
   const getDetectionColor = (type: string) => {
-    return type === 'repair' ? 'bg-red-500/10 text-red-700 border-red-200' : 'bg-green-500/10 text-green-700 border-green-200';
+    return type === 'repair'
+      ? 'bg-red-500/10 text-red-300 border-red-400/40'
+      : 'bg-emerald-500/10 text-emerald-300 border-emerald-400/40';
   };
 
   return (
@@ -97,7 +99,7 @@ export function QueryBar({
             placeholder="Describe your problem or what you want to buy... (e.g., 'my pc shuts down during games and gpu is very hot' or 'I want to buy a laptop for study under 100000 LKR')"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[100px] pr-12 resize-none"
+            className="min-h-[100px] pr-12 resize-none bg-white/5 border-white/15 text-gray-100 placeholder:text-gray-400 focus-visible:ring-cyan-500/60"
             disabled={loading}
           />
           {isSupported && (
@@ -106,7 +108,7 @@ export function QueryBar({
               variant={isListening ? "destructive" : "outline"}
               size="icon"
               onClick={handleVoiceToggle}
-              className="absolute right-2 top-2 h-8 w-8"
+              className="absolute right-2 top-2 h-8 w-8 border-white/20 bg-white/10 text-gray-100 hover:bg-white/20"
               disabled={loading}
             >
               {isListening ? (
@@ -123,7 +125,7 @@ export function QueryBar({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-2 text-sm text-muted-foreground"
+            className="flex items-center gap-2 text-sm text-gray-300"
           >
             <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
             Listening... Speak now
@@ -134,7 +136,7 @@ export function QueryBar({
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-sm text-destructive"
+            className="text-sm text-red-300"
           >
             {error}
           </motion.div>
@@ -153,7 +155,7 @@ export function QueryBar({
             >
               Detected: {detectionResult.category} ({detectionResult.type})
             </Badge>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-xs text-gray-400">
               {Math.round(detectionResult.confidence * 100)}% confidence
             </span>
           </motion.div>
@@ -163,11 +165,11 @@ export function QueryBar({
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="space-y-2">
-          <label className="text-sm font-medium">District</label>
+          <label className="text-sm font-medium text-gray-200">District</label>
           <select
             value={district}
             onChange={(e) => setDistrict(e.target.value)}
-            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="w-full h-10 px-3 rounded-md border border-white/20 bg-white/5 text-sm text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             disabled={loading}
           >
             <option value="">Any District</option>
@@ -178,11 +180,11 @@ export function QueryBar({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium">Budget</label>
+          <label className="text-sm font-medium text-gray-200">Budget</label>
           <select
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
-            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="w-full h-10 px-3 rounded-md border border-white/20 bg-white/5 text-sm text-gray-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500"
             disabled={loading}
           >
             <option value="">Any Budget</option>
@@ -200,7 +202,7 @@ export function QueryBar({
           onClick={onSearch}
           disabled={loading || !description.trim()}
           size="lg"
-          className="min-w-[200px]"
+          className="min-w-[200px] bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500"
         >
           {loading ? (
             <>

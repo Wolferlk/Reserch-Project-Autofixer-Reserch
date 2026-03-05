@@ -312,3 +312,59 @@ body::before {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 217, 255, 0.5);
 }
+
+/* Scoped theme alignment for hardware-repair page */
+.hardware-repair-theme {
+  position: relative;
+}
+
+.hardware-repair-theme::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 15%, rgba(34, 211, 238, 0.12) 0%, transparent 40%),
+    radial-gradient(circle at 85% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 42%),
+    radial-gradient(circle at 50% 100%, rgba(168, 85, 247, 0.08) 0%, transparent 45%);
+}
+
+.hardware-repair-theme > * {
+  position: relative;
+  z-index: 1;
+}
+
+.hardware-repair-theme .bg-white {
+  background-color: rgba(15, 23, 42, 0.72) !important;
+  backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+.hardware-repair-theme .bg-gray-50 {
+  background-color: rgba(15, 23, 42, 0.5) !important;
+}
+
+.hardware-repair-theme .bg-gray-100 {
+  background-color: rgba(30, 41, 59, 0.6) !important;
+}
+
+.hardware-repair-theme .border-gray-100,
+.hardware-repair-theme .border-gray-200,
+.hardware-repair-theme .border-gray-300 {
+  border-color: rgba(255, 255, 255, 0.14) !important;
+}
+
+.hardware-repair-theme .text-gray-900 {
+  color: rgb(248 250 252) !important;
+}
+
+.hardware-repair-theme .text-gray-800,
+.hardware-repair-theme .text-gray-700 {
+  color: rgb(226 232 240) !important;
+}
+
+.hardware-repair-theme .text-gray-600,
+.hardware-repair-theme .text-gray-500 {
+  color: rgb(148 163 184) !important;
+}

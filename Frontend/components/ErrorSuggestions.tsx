@@ -17,10 +17,10 @@ export function ErrorSuggestions({ suggestions, onSelect, visible }: ErrorSugges
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -10 }}
-        className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+        className="absolute z-50 w-full mt-1 bg-slate-950/95 border border-white/15 rounded-lg shadow-lg max-h-60 overflow-y-auto backdrop-blur-md"
       >
-        <div className="px-3 py-2 bg-purple-50 border-b border-gray-200">
-          <p className="text-xs font-semibold text-purple-700">💡 Similar Issues</p>
+        <div className="px-3 py-2 bg-cyan-500/10 border-b border-white/10">
+          <p className="text-xs font-semibold text-cyan-300">💡 Similar Issues</p>
         </div>
         {suggestions.map((suggestion, index) => (
           <button
@@ -35,11 +35,11 @@ export function ErrorSuggestions({ suggestions, onSelect, visible }: ErrorSugges
               e.preventDefault();
               onSelect(suggestion);
             }}
-            className="w-full text-left px-4 py-3 hover:bg-purple-50 transition-colors border-b border-gray-100 last:border-b-0 focus:bg-purple-50 focus:outline-none cursor-pointer"
+            className="w-full text-left px-4 py-3 hover:bg-cyan-500/10 transition-colors border-b border-white/10 last:border-b-0 focus:bg-cyan-500/10 focus:outline-none cursor-pointer"
           >
             <div className="flex items-center gap-2">
-              <span className="text-purple-600 text-xs">→</span>
-              <span className="text-sm text-gray-900">{suggestion}</span>
+              <span className="text-cyan-400 text-xs">→</span>
+              <span className="text-sm text-gray-100">{suggestion}</span>
             </div>
           </button>
         ))}

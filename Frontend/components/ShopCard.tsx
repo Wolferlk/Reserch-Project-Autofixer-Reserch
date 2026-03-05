@@ -39,17 +39,17 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="h-full">
+      <Card className="h-full bg-white/5 border-white/15 backdrop-blur-md text-gray-100">
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <CardTitle className="text-lg">{shop.shop_name}</CardTitle>
               <div className="flex items-center gap-2 mt-1">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground">{shop.district}</span>
+                <MapPin className="h-4 w-4 text-gray-400" />
+                <span className="text-sm text-gray-400">{shop.district}</span>
               </div>
             </div>
-            <Badge variant="secondary" className="font-mono">
+            <Badge variant="secondary" className="font-mono bg-cyan-500/15 text-cyan-300 border-cyan-400/30">
               #{rank}
             </Badge>
           </div>
@@ -60,7 +60,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
           {shop.score && (
             <div className="text-center">
               <div className="text-2xl font-bold font-mono">{shop.score.toFixed(2)}</div>
-              <div className="text-xs text-muted-foreground">Match Score</div>
+              <div className="text-xs text-gray-400">Match Score</div>
             </div>
           )}
 
@@ -73,7 +73,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
               <span className="text-sm font-medium">
                 {shop.avg_rating.toFixed(1)}
               </span>
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-gray-400">
                 ({shop.reviews} reviews)
               </span>
             </div>
@@ -82,7 +82,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
           {/* Badges */}
           <div className="flex flex-wrap gap-2">
             {shop.verified && (
-              <Badge variant="outline" className="text-green-700 border-green-200">
+              <Badge variant="outline" className="text-emerald-300 border-emerald-400/40 bg-emerald-500/10">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 Verified
               </Badge>
@@ -94,19 +94,19 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
               </Badge>
             )}
             {shop.budget_fit === 1 && (
-              <Badge variant="outline" className="text-yellow-700 border-yellow-200">
+              <Badge variant="outline" className="text-amber-300 border-amber-400/40 bg-amber-500/10">
                 Budget Fit
               </Badge>
             )}
             {shop.specialization && (
-              <Badge variant="outline" className="text-purple-700 border-purple-200">
+              <Badge variant="outline" className="text-cyan-300 border-cyan-400/40 bg-cyan-500/10">
                 {shop.specialization}
               </Badge>
             )}
           </div>
 
           {/* Meta Info */}
-          <div className="space-y-2 text-sm text-muted-foreground">
+          <div className="space-y-2 text-sm text-gray-300">
             {shop.turnaround_days && (
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4" />
@@ -123,7 +123,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-auto p-0 text-sm text-blue-600 hover:text-blue-800"
+                className="h-auto p-0 text-sm text-cyan-300 hover:text-cyan-200"
                 onClick={() => window.open(`https://www.google.com/maps?q=${shop.latitude},${shop.longitude}`, '_blank')}
               >
                 <MapPin className="h-4 w-4 mr-1" />
@@ -133,8 +133,8 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
           </div>
 
           {/* Why Recommended */}
-          <div className="p-3 bg-muted/50 rounded-md">
-            <p className="text-xs text-muted-foreground">
+          <div className="p-3 bg-white/5 border border-white/10 rounded-md">
+            <p className="text-xs text-gray-300">
               <strong>Why recommended:</strong> {matchReason}
             </p>
           </div>
@@ -143,7 +143,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
           <div className="flex gap-2 pt-2">
             <Button
               onClick={() => onViewDetails(shop.shop_id)}
-              className="flex-1"
+              className="flex-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-white hover:from-cyan-400 hover:to-blue-500"
               size="sm"
             >
               View Details
@@ -153,7 +153,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
                 variant="outline"
                 size="sm"
                 onClick={() => onFeedback(shop.shop_id, 'shop')}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 border-white/20 bg-white/5 hover:bg-white/10 text-gray-100"
               >
                 <ThumbsUp className="h-4 w-4" />
               </Button>
@@ -161,7 +161,7 @@ export function ShopCard({ shop, rank, onViewDetails, onFeedback }: ShopCardProp
                 variant="outline"
                 size="sm"
                 onClick={() => onFeedback(shop.shop_id, 'shop')}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 border-white/20 bg-white/5 hover:bg-white/10 text-gray-100"
               >
                 <ThumbsDown className="h-4 w-4" />
               </Button>

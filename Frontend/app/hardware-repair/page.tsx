@@ -2006,32 +2006,32 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-purple-50 to-blue-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="hardware-repair-theme min-h-screen bg-black text-white">
+      <div className="container-custom py-10 max-w-7xl">
         {/* Header */}
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
-            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-blue-600 to-purple-600 bg-clip-text text-transparent mb-3">
+            <h1 className="text-5xl font-extrabold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 bg-clip-text text-transparent mb-3">
               PC Recommendation Engine
             </h1>
-            <div className="h-1 w-24 bg-gradient-to-r from-purple-600 to-blue-600 mx-auto rounded-full"></div>
+            <div className="h-1 w-24 bg-gradient-to-r from-cyan-400 to-blue-500 mx-auto rounded-full"></div>
           </div>
-          <p className="text-xl text-gray-700 font-medium">
+          <p className="text-xl text-gray-300 font-medium">
             Find repairs, products, and hardware recommendations for your PC needs
           </p>
         </div>
 
         {/* Tabs Navigation */}
         <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-2 inline-flex gap-2">
+          <div className="bg-white/5 backdrop-blur-md rounded-xl shadow-lg border border-white/15 p-2 inline-flex gap-2">
             {(['repairs', 'products', 'hardware'] as TabType[]).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
                 className={`px-6 py-3 rounded-lg font-semibold transition-all duration-200 transform ${
                   activeTab === tab
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg scale-105'
-                    : 'text-gray-600 hover:bg-gray-50 hover:scale-102'
+                    ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg scale-105'
+                    : 'text-gray-300 hover:bg-white/10 hover:scale-102'
                 }`}
               >
                 {tab === 'hardware' ? 'Hardware Recommender' : tab.charAt(0).toUpperCase() + tab.slice(1)}
@@ -2050,14 +2050,14 @@ export default function Home() {
         {/* Repairs Section */}
         {activeTab === 'repairs' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-xl border-2 border-blue-200 p-6">
+            <div className="bg-white/5 backdrop-blur-md rounded-xl shadow-xl border border-cyan-400/30 p-6">
               {/* Section Header */}
-              <div className="mb-6 pb-4 border-b-2 border-blue-200">
+              <div className="mb-6 pb-4 border-b border-white/15">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">🔧</span>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-gray-900">Repair Services</h2>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <h2 className="text-2xl font-bold text-white">Repair Services</h2>
+                    <p className="text-sm text-gray-300 mt-1">
                       Get expert PC repair recommendations tailored to your specific issue. 
                       Our AI-powered system matches you with the best repair shops based on specialization, 
                       location, ratings, and customer reviews.
@@ -2068,7 +2068,7 @@ export default function Home() {
 
               {/* Search Bar */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   Describe your PC issue
                 </label>
                 <div className="relative">
@@ -2098,7 +2098,7 @@ export default function Home() {
                     }}
                     placeholder="e.g., 'Blue screen after update', 'GPU overheating during gaming', 'Need SSD upgrade'"
                     rows={3}
-                    className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3 py-2 pr-20 border border-white/20 bg-black/30 text-gray-100 rounded-md shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                   
                   {/* Error Suggestions Dropdown */}
@@ -2122,9 +2122,9 @@ export default function Home() {
 
                   {/* Product Suggestions Dropdown */}
                   {activeTab === 'products' && showSuggestions && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      <div className="px-3 py-2 bg-purple-50 border-b border-gray-200">
-                        <p className="text-xs font-semibold text-purple-700">🛒 Similar Product Searches</p>
+                    <div className="absolute z-50 w-full mt-1 bg-slate-900/95 border border-white/20 rounded-md shadow-lg max-h-60 overflow-auto backdrop-blur-md">
+                      <div className="px-3 py-2 bg-cyan-500/10 border-b border-white/10">
+                        <p className="text-xs font-semibold text-cyan-300">🛒 Similar Product Searches</p>
                       </div>
                       {generateProductSuggestions(searchQuery).map((suggestion, idx) => (
                         <button
@@ -2147,10 +2147,10 @@ export default function Home() {
                             setSearchQuery(suggestion);
                             setShowSuggestions(false);
                           }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 hover:text-purple-700 transition-colors border-b border-gray-100 last:border-b-0 focus:bg-purple-50 focus:outline-none cursor-pointer"
+                          className="w-full text-left px-4 py-3 text-sm text-gray-200 hover:bg-cyan-500/10 hover:text-cyan-300 transition-colors border-b border-white/10 last:border-b-0 focus:bg-cyan-500/10 focus:outline-none cursor-pointer"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-purple-600 text-xs">→</span>
+                            <span className="text-cyan-400 text-xs">→</span>
                             <span>{suggestion}</span>
                           </div>
                         </button>

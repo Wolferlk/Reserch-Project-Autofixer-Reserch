@@ -68,30 +68,30 @@ export default function ShopDetailsModal({
   const mapsUrl = getLocationData();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-950/90 border border-white/15 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto text-gray-100">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-start">
+        <div className="sticky top-0 bg-slate-950/95 border-b border-white/10 px-6 py-4 flex justify-between items-start">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">{shop.shop_name}</h2>
+            <h2 className="text-2xl font-bold text-white">{shop.shop_name}</h2>
             <div className="flex items-center space-x-4 mt-2">
               {shop.verified && (
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 border border-emerald-400/40 text-emerald-300">
                   ✅ Verified
                 </span>
               )}
               <div className="flex items-center">
                 <span className="text-yellow-400">⭐</span>
-                <span className="ml-1 text-sm text-gray-600">
+                <span className="ml-1 text-sm text-gray-300">
                   {shop.avg_rating?.toFixed(1) || 'N/A'} ({shop.reviews || 0} reviews)
                 </span>
               </div>
-              <span className="text-sm text-gray-600">📍 {shop.district}</span>
+              <span className="text-sm text-gray-300">📍 {shop.district}</span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-gray-400 hover:text-white text-2xl"
           >
             ✕
           </button>
@@ -102,16 +102,16 @@ export default function ShopDetailsModal({
           {loading && (
             <div className="space-y-4">
               <div className="animate-pulse">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+                <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
+                <div className="h-4 bg-white/10 rounded w-1/2 mb-4"></div>
               </div>
               <div className="animate-pulse">
-                <div className="h-32 bg-gray-200 rounded"></div>
+                <div className="h-32 bg-white/10 rounded"></div>
               </div>
               <div className="animate-pulse">
-                <div className="h-32 bg-gray-200 rounded"></div>
+                <div className="h-32 bg-white/10 rounded"></div>
               </div>
-              <p className="text-center text-gray-500 py-8">Loading details...</p>
+              <p className="text-center text-gray-400 py-8">Loading details...</p>
             </div>
           )}
 
@@ -124,12 +124,12 @@ export default function ShopDetailsModal({
           {shopDetails && !loading && (
             <div className="space-y-6">
               {/* Contact Information - Phone, Address, and Google Maps */}
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Contact Information</h3>
+              <div className="bg-white/5 border border-white/10 rounded-lg p-6">
+                <h3 className="text-lg font-semibold text-white mb-4">Contact Information</h3>
                 <div className="space-y-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">📞 Phone Number</p>
-                    <p className="text-lg text-gray-900">
+                    <p className="text-sm font-medium text-gray-400 mb-2">📞 Phone Number</p>
+                    <p className="text-lg text-gray-100">
                       {shopDetails.shop?.phone_number || 
                        shopDetails.shop?.phone || 
                        shopDetails.phone || 
@@ -139,8 +139,8 @@ export default function ShopDetailsModal({
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 mb-2">📍 Address</p>
-                    <p className="text-lg text-gray-900">
+                    <p className="text-sm font-medium text-gray-400 mb-2">📍 Address</p>
+                    <p className="text-lg text-gray-100">
                       {shopDetails.shop?.city_address ||
                        shopDetails.shop?.address || 
                        shopDetails.address || 
@@ -153,12 +153,12 @@ export default function ShopDetailsModal({
                   {/* Google Maps Location - Show if mapsUrl is available */}
                   {mapsUrl && (
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-2">🗺️ Location</p>
+                      <p className="text-sm font-medium text-gray-400 mb-2">🗺️ Location</p>
                       <a
                         href={mapsUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
+                        className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-md hover:from-cyan-400 hover:to-blue-500 transition-colors font-medium"
                       >
                         <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />

@@ -14,22 +14,22 @@ interface BestMatchProps {
 export default function BestMatch({ shops, products, summary, loading = false, onClose }: BestMatchProps) {
   if (loading) {
     return (
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 rounded-lg p-6 mb-6 shadow-md">
+      <div className="bg-slate-950/70 border border-cyan-400/30 rounded-lg p-6 mb-6 shadow-md backdrop-blur-md">
         <div className="flex items-center justify-center gap-4">
           <div className="flex-shrink-0">
-            <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl animate-pulse">
+            <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl animate-pulse">
               🛠️
             </div>
           </div>
           <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Analyzing Your Needs...</h3>
+            <h3 className="text-xl font-bold text-white mb-2">Analyzing Your Needs...</h3>
             <div className="flex items-center gap-2">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                <div className="w-2 h-2 bg-cyan-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
               </div>
-              <p className="text-sm text-gray-600">Finding the best shops, products, and solutions for you...</p>
+              <p className="text-sm text-gray-300">Finding the best shops, products, and solutions for you...</p>
             </div>
           </div>
         </div>
@@ -64,11 +64,11 @@ export default function BestMatch({ shops, products, summary, loading = false, o
   };
 
   return (
-    <div className="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-500 rounded-lg p-6 mb-6 shadow-md relative">
+    <div className="bg-slate-950/70 border border-cyan-400/30 rounded-lg p-6 mb-6 shadow-md relative backdrop-blur-md text-gray-100">
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
           aria-label="Close Best Match"
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,20 +78,20 @@ export default function BestMatch({ shops, products, summary, loading = false, o
       )}
       <div className="flex items-start gap-4">
         <div className="flex-shrink-0">
-          <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
+          <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl">
             🛠️
           </div>
         </div>
         <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-4">Best Match - Recommended Repair Center</h3>
+          <h3 className="text-xl font-bold text-white mb-4">Best Match - Recommended Repair Center</h3>
           
           {/* Top Shop */}
           {shops.length > 0 && (
-            <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">🏆 Best Match - Recommended Repair Center</h4>
-              <div className="border-l-4 border-purple-500 pl-4">
-                <h5 className="font-semibold text-gray-900 text-lg">{shops[0].shop_name}</h5>
-                <div className="mt-2 space-y-1 text-sm text-gray-600">
+            <div className="mb-6 bg-white/5 border border-white/10 rounded-lg p-4 shadow-sm">
+              <h4 className="text-lg font-semibold text-white mb-3">🏆 Best Match - Recommended Repair Center</h4>
+              <div className="border-l-4 border-cyan-400 pl-4">
+                <h5 className="font-semibold text-white text-lg">{shops[0].shop_name}</h5>
+                <div className="mt-2 space-y-1 text-sm text-gray-300">
                   {shops[0].avg_rating && (
                     <div className="flex items-center gap-2">
                       {renderStars(shops[0].avg_rating)}
@@ -101,64 +101,64 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                   )}
                   <p>📍 {shops[0].district}</p>
                   {shops[0].turnaround_days && <p>⏱️ {shops[0].turnaround_days} days turnaround</p>}
-                  {(shops[0].verified === true || shops[0].verified === 1) && (
-                    <span className="inline-flex items-center px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-700">
+                  {Boolean(shops[0].verified) && (
+                    <span className="inline-flex items-center px-2 py-1 text-xs rounded-full font-medium bg-emerald-500/10 border border-emerald-400/40 text-emerald-300">
                       ✅ Verified
                     </span>
                   )}
                 </div>
                 
                 {/* Why This Shop Was Recommended */}
-                <div className="mt-4 bg-purple-50 rounded-lg p-4 border border-purple-200">
-                  <h6 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                <div className="mt-4 bg-cyan-500/10 rounded-lg p-4 border border-cyan-400/30">
+                  <h6 className="font-semibold text-cyan-200 mb-3 flex items-center gap-2">
                     <span>💡</span> Why This Shop Was Recommended:
                   </h6>
                   <ul className="space-y-2 text-sm">
                     {shops[0].type_match === 1 && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">Specializes in your error type</strong> - This shop has expertise in handling your specific issue
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">Specializes in your error type</strong> - This shop has expertise in handling your specific issue
                         </span>
                       </li>
                     )}
                     {shops[0].district_match === 1 && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">Located in your district</strong> - Convenient location in {shops[0].district}
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">Located in your district</strong> - Convenient location in {shops[0].district}
                         </span>
                       </li>
                     )}
                     {shops[0].avg_rating && shops[0].avg_rating >= 4.0 && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">High ratings</strong> - {shops[0].avg_rating.toFixed(1)}/5.0 average rating
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">High ratings</strong> - {shops[0].avg_rating.toFixed(1)}/5.0 average rating
                         </span>
                       </li>
                     )}
                     {shops[0].reviews && shops[0].reviews >= 20 && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">Well-reviewed</strong> - {shops[0].reviews} customer reviews
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">Well-reviewed</strong> - {shops[0].reviews} customer reviews
                         </span>
                       </li>
                     )}
-                    {(shops[0].verified === true || shops[0].verified === 1) && (
+                    {Boolean(shops[0].verified) && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">Verified shop</strong> - Platform verified for reliability
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">Verified shop</strong> - Platform verified for reliability
                         </span>
                       </li>
                     )}
                     {shops[0].turnaround_days && shops[0].turnaround_days <= 3 && (
                       <li className="flex items-start gap-2">
                         <span className="text-green-600 font-bold mt-0.5">✓</span>
-                        <span className="text-gray-700">
-                          <strong className="text-purple-700">Fast turnaround</strong> - Average {shops[0].turnaround_days} days completion time
+                        <span className="text-gray-200">
+                          <strong className="text-cyan-300">Fast turnaround</strong> - Average {shops[0].turnaround_days} days completion time
                         </span>
                       </li>
                     )}
@@ -166,14 +166,14 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                       shops[0].factors.slice(0, 2).map((factor: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-2">
                           <span className="text-green-600 font-bold mt-0.5">✓</span>
-                          <span className="text-gray-700">{factor}</span>
+                          <span className="text-gray-200">{factor}</span>
                         </li>
                       ))
                     )}
                     {shops[0].reason && (
-                      <li className="flex items-start gap-2 mt-3 pt-3 border-t border-purple-200">
+                      <li className="flex items-start gap-2 mt-3 pt-3 border-t border-cyan-400/20">
                         <span className="text-blue-600 font-bold mt-0.5">💬</span>
-                        <span className="text-gray-700 italic">{shops[0].reason}</span>
+                        <span className="text-gray-200 italic">{shops[0].reason}</span>
                       </li>
                     )}
                   </ul>
@@ -184,18 +184,18 @@ export default function BestMatch({ shops, products, summary, loading = false, o
 
           {/* Products List */}
           {products.length > 0 && (
-            <div className="mb-6 bg-white rounded-lg p-4 shadow-sm">
-              <h4 className="text-lg font-semibold text-gray-900 mb-3">🛒 Recommended Products</h4>
+            <div className="mb-6 bg-white/5 border border-white/10 rounded-lg p-4 shadow-sm">
+              <h4 className="text-lg font-semibold text-white mb-3">🛒 Recommended Products</h4>
               <ul className="space-y-2">
                 {products.map((product, index) => (
-                  <li key={product.product_id || index} className="border-l-4 border-blue-500 pl-4">
+                  <li key={product.product_id || index} className="border-l-4 border-cyan-400 pl-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-gray-100">
                           {product.brand} {product.model}
                         </p>
-                        <p className="text-sm text-gray-600">{product.category}</p>
-                        <p className="text-sm font-semibold text-green-600">
+                        <p className="text-sm text-gray-300">{product.category}</p>
+                        <p className="text-sm font-semibold text-emerald-300">
                           LKR {product.price_lkr?.toLocaleString() || 'N/A'}
                         </p>
                       </div>
@@ -204,8 +204,8 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                         <span className={`text-xs px-2 py-1 rounded-full ${
                           (product.stock_status || '').toLowerCase().includes('stock') && 
                           !(product.stock_status || '').toLowerCase().includes('out')
-                            ? 'bg-green-100 text-green-700' 
-                            : 'bg-yellow-100 text-yellow-700'
+                            ? 'bg-emerald-500/10 border border-emerald-400/40 text-emerald-300' 
+                            : 'bg-amber-500/10 border border-amber-400/40 text-amber-300'
                         }`}>
                           {product.stock_status?.replace(/_/g, ' ') || 'Unknown'}
                         </span>
@@ -219,13 +219,13 @@ export default function BestMatch({ shops, products, summary, loading = false, o
 
           {/* Summary */}
           {summary && (
-            <div className="bg-white rounded-lg p-4 shadow-sm">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">📋 Why This Shop?</h4>
+            <div className="bg-white/5 border border-white/10 rounded-lg p-4 shadow-sm">
+              <h4 className="text-lg font-semibold text-white mb-2">📋 Why This Shop?</h4>
               <div className="prose prose-sm max-w-none">
                 {summary.split('\n\n').map((paragraph, index) => (
-                  <p key={index} className="text-gray-700 mb-2 last:mb-0 whitespace-pre-line">
+                  <p key={index} className="text-gray-200 mb-2 last:mb-0 whitespace-pre-line">
                     {paragraph.split('**').map((part, i) => 
-                      i % 2 === 1 ? <strong key={i} className="text-purple-700">{part}</strong> : part
+                      i % 2 === 1 ? <strong key={i} className="text-cyan-300">{part}</strong> : part
                     )}
                   </p>
                 ))}
@@ -237,4 +237,3 @@ export default function BestMatch({ shops, products, summary, loading = false, o
     </div>
   );
 }
-

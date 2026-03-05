@@ -24,13 +24,13 @@ export default function Toast({ show, message, type = 'success', onClose, durati
   const getTypeStyles = () => {
     switch (type) {
       case 'success':
-        return 'bg-green-500 text-white';
+        return 'bg-emerald-500/90 text-white border border-emerald-300/40';
       case 'error':
-        return 'bg-red-500 text-white';
+        return 'bg-red-500/90 text-white border border-red-300/40';
       case 'info':
-        return 'bg-blue-500 text-white';
+        return 'bg-cyan-500/90 text-white border border-cyan-300/40';
       default:
-        return 'bg-green-500 text-white';
+        return 'bg-emerald-500/90 text-white border border-emerald-300/40';
     }
   };
 
@@ -49,7 +49,7 @@ export default function Toast({ show, message, type = 'success', onClose, durati
 
   return (
     <div className="fixed top-4 right-4 z-50 animate-slide-in">
-      <div className={`${getTypeStyles()} px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 max-w-sm`}>
+      <div className={`${getTypeStyles()} px-6 py-3 rounded-lg shadow-lg backdrop-blur-md flex items-center gap-2 max-w-sm`}>
         <span className="text-lg">{getIcon()}</span>
         <span className="font-medium">{message}</span>
         <button

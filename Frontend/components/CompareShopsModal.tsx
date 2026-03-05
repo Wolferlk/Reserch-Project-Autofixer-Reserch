@@ -36,14 +36,14 @@ export default function CompareShopsModal({ shops, onClose }: CompareShopsModalP
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-xl">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-slate-950/90 border border-white/15 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-xl text-gray-100">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-gray-900">Compare Shops</h2>
+        <div className="sticky top-0 bg-slate-950/95 border-b border-white/10 px-6 py-4 flex justify-between items-center">
+          <h2 className="text-2xl font-bold text-white">Compare Shops</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+            className="text-gray-400 hover:text-white text-2xl font-bold"
           >
             ✕
           </button>
@@ -52,76 +52,76 @@ export default function CompareShopsModal({ shops, onClose }: CompareShopsModalP
         {/* Comparison Table */}
         <div className="p-6">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-white/10">
+              <thead className="bg-white/5">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                     Feature
                   </th>
                   {shops.map((shop) => (
-                    <th key={shop.shop_id} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th key={shop.shop_id} className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
                       {shop.shop_name}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-transparent divide-y divide-white/10">
                 {/* Rating */}
                 <tr>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     Rating
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
                       {shop.avg_rating ? (
                         <div className="flex items-center gap-2">
                           {renderStars(shop.avg_rating)}
                           <span>{shop.avg_rating.toFixed(1)}</span>
                         </div>
                       ) : (
-                        <span className="text-gray-400">N/A</span>
+                        <span className="text-gray-500">N/A</span>
                       )}
                     </td>
                   ))}
                 </tr>
 
                 {/* Reviews Count */}
-                <tr className="bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr className="bg-white/[0.02]">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     Reviews Count
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {shop.reviews ?? <span className="text-gray-400">N/A</span>}
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                      {shop.reviews ?? <span className="text-gray-500">N/A</span>}
                     </td>
                   ))}
                 </tr>
 
                 {/* District */}
                 <tr>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     District
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {shop.district || <span className="text-gray-400">N/A</span>}
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                      {shop.district || <span className="text-gray-500">N/A</span>}
                     </td>
                   ))}
                 </tr>
 
                 {/* Verified */}
-                <tr className="bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr className="bg-white/[0.02]">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     Verified
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      {shop.verified === true || shop.verified === 1 ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                      {Boolean(shop.verified) ? (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-400/40">
                           Yes
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/10 text-gray-300 border border-white/20">
                           No
                         </span>
                       )}
@@ -131,28 +131,28 @@ export default function CompareShopsModal({ shops, onClose }: CompareShopsModalP
 
                 {/* Turnaround Time */}
                 <tr>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     Turnaround Time
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
                       {shop.turnaround_days ? (
                         <span>{shop.turnaround_days} days</span>
                       ) : (
-                        <span className="text-gray-400">N/A</span>
+                        <span className="text-gray-500">N/A</span>
                       )}
                     </td>
                   ))}
                 </tr>
 
                 {/* Score */}
-                <tr className="bg-gray-50">
-                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                <tr className="bg-white/[0.02]">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-100">
                     Match Score
                   </td>
                   {shops.map((shop) => (
-                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
-                      <span className="font-semibold text-purple-600">{shop.score.toFixed(2)}</span>
+                    <td key={shop.shop_id} className="px-4 py-3 whitespace-nowrap text-sm text-gray-300">
+                      <span className="font-semibold text-cyan-300">{(shop.score ?? 0).toFixed(2)}</span>
                     </td>
                   ))}
                 </tr>
@@ -162,10 +162,10 @@ export default function CompareShopsModal({ shops, onClose }: CompareShopsModalP
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-50 border-t border-gray-200 px-6 py-4 flex justify-end">
+        <div className="sticky bottom-0 bg-slate-950/95 border-t border-white/10 px-6 py-4 flex justify-end">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-colors"
           >
             Close
           </button>
