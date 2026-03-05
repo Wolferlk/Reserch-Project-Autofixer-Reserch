@@ -1,0 +1,54 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Logs
+*.log
+
+# Env files
+.env
+.env.*
+
+# Build / distribution
+dist/
+build/
+*.egg-info/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+
+# ML / data artifacts
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.onnx
+*.bin
+
+# Project-specific generated data
+uploads/
+Reports/
+
+# Keep model configs tracked, ignore large generated checkpoints if added elsewhere
+models/**/checkpoint*/

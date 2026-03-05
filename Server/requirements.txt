@@ -1,0 +1,21 @@
+# Core
+numpy>=1.26,<2.3
+pandas>=2.1
+python-dotenv>=1.0
+
+# OCR
+pytesseract>=0.3.13
+pillow>=10.0
+opencv-python>=4.9
+
+# Backend API
+fastapi>=0.110
+uvicorn>=0.27
+
+# Retrieval / NLP (future-proof)
+scikit-learn>=1.4
+sentence-transformers>=2.6
+
+# Utilities
+tqdm>=4.66
+requests>=2.31

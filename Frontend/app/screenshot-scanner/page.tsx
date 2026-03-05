@@ -87,7 +87,7 @@ export default function ScreenshotScanner() {
     const form = new FormData()
     form.append('image', file)
     try {
-      const res  = await fetch('http://127.0.0.1:8000/analyze', { method: 'POST', body: form })
+      const res  = await fetch('http://127.0.0.1:8001/analyze', { method: 'POST', body: form })
       const data = await res.json()
       setResult(data)
     } catch {
