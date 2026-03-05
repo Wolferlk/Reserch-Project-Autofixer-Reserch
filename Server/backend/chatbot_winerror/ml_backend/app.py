@@ -10,6 +10,7 @@ from pathlib import Path
 import os
 import sys
 from typing import Optional
+from threading import Lock
 
 HERE = Path(__file__).parent.resolve()
 if str(HERE) not in sys.path:
@@ -33,6 +34,7 @@ model = None
 error_database = None
 embeddings = None
 model_load_error: Optional[str] = None
+model_load_lock = Lock()
 
 class ErrorRequest(BaseModel):
     user_error: str
@@ -83,6 +85,29 @@ def load_model():
     print(f"Model loaded successfully! {len(error_database)} errors in database.")
     model_load_error = None
 
+def is_model_ready() -> bool:
+    return model is not None and error_database is not None and embeddings is not None
+
+def ensure_model_loaded() -> bool:
+    """Lazy-load model so mounted sub-app works even if startup hook is skipped."""
+    global model, error_database, embeddings, model_load_error
+
+    if is_model_ready():
+        return True
+
+    with model_load_lock:
+        if is_model_ready():
+            return True
+        try:
+            load_model()
+            return True
+        except Exception as exc:
+            model = None
+            error_database = None
+            embeddings = None
+            model_load_error = str(exc)
+            return False
+
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
@@ -96,28 +121,33 @@ async def startup_event():
 
 @app.get("/")
 async def root():
+    if not is_model_ready():
+        ensure_model_loaded()
     return {
         "message": "Error Detection API",
         "status": "running",
-        "model_loaded": model is not None,
+        "model_loaded": is_model_ready(),
         "model_load_error": model_load_error,
     }
 
 @app.get("/health")
 async def health():
+    if not is_model_ready():
+        ensure_model_loaded()
     return {
         "status": "healthy",
-        "model_loaded": model is not None,
+        "model_loaded": is_model_ready(),
         "database_size": len(error_database) if error_database is not None else 0,
         "model_load_error": model_load_error,
     }
 
 def find_best_match(user_error_text: str, top_k: int = 1):
     """Find the best matching error using semantic similarity"""
-    if model is None or error_database is None or embeddings is None:
+    if not ensure_model_loaded():
+        reason = model_load_error or "Unknown model loading error"
         raise HTTPException(
             status_code=503,
-            detail="Model not loaded. Please train the model first."
+            detail=f"Model not loaded: {reason}"
         )
     
     user_embedding = model.encode([user_error_text], show_progress_bar=False)[0]

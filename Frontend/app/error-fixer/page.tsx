@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 
 interface Solution {
   error_name: string;
@@ -21,6 +20,18 @@ interface StepAnalysis {
   commands: string[];
   warning: string;
 }
+
+const RAW_API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_RECO_API_URL ||
+  'http://localhost:8001'
+).replace(/\/+$/, '');
+
+const CHATBOT_API_BASE = RAW_API_BASE_URL.endsWith('/chatbot')
+  ? RAW_API_BASE_URL
+  : `${RAW_API_BASE_URL}/chatbot`;
+
+const CHATBOT_API_FALLBACK_BASE = RAW_API_BASE_URL;
 
 // ─── Background helpers ────────────────────────────────────────────────────────
 
@@ -284,6 +295,52 @@ export default function Home() {
     });
   };
 
+  const postToChatbot = async <T,>(path: string, payload: object): Promise<T> => {
+    const candidates = [CHATBOT_API_BASE, CHATBOT_API_FALLBACK_BASE];
+    let lastErrorMessage = 'Failed to contact backend service.';
+
+    for (let i = 0; i < candidates.length; i++) {
+      const base = candidates[i];
+      const isLastCandidate = i === candidates.length - 1;
+
+      try {
+        const response = await fetch(`${base}${path}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!response.ok) {
+          let detail = '';
+          try {
+            const data = await response.json();
+            detail = data?.detail || '';
+          } catch {
+            detail = '';
+          }
+          const error: any = new Error(detail || `Request failed with status ${response.status}`);
+          error.status = response.status;
+          throw error;
+        }
+
+        return (await response.json()) as T;
+      } catch (err: any) {
+        lastErrorMessage = err?.message || lastErrorMessage;
+
+        // Only try fallback endpoint when route is missing or backend is unreachable.
+        const status = err?.status;
+        const isMissingRoute = status === 404;
+        const isNetworkError = err instanceof TypeError;
+        if (!isLastCandidate && (isMissingRoute || isNetworkError)) {
+          continue;
+        }
+        break;
+      }
+    }
+
+    throw new Error(lastErrorMessage);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!errorText.trim()) {
@@ -300,36 +357,33 @@ export default function Home() {
     setIsStreaming(false);
 
     try {
-      const response = await axios.post('/api/ml/detect-error', {
+      const response = await postToChatbot<Solution>('/detect-error', {
         user_error: errorText,
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
       });
 
       setTimeout(() => {
-        setSolution(response.data);
+        setSolution(response);
         setShowFollowUp(true);
         setIsStreaming(true);
         setDisplayedSteps(0);
 
-        try {
-          const multiResponse = axios.post('/api/ml/detect-error-multi?limit=3', {
+        postToChatbot<{ solutions: Solution[]; total_found: number }>(
+          '/detect-error-multi?limit=3',
+          {
             user_error: errorText,
-          }).then(multiResponse => {
-            if (multiResponse.data.solutions && multiResponse.data.solutions.length > 1) {
-              setMultiSolutions(multiResponse.data.solutions);
+          }
+        )
+          .then((multiResponse) => {
+            if (multiResponse.solutions && multiResponse.solutions.length > 1) {
+              setMultiSolutions(multiResponse.solutions);
             }
-          }).catch(e => {});
-        } catch (e) {}
+          })
+          .catch(() => {});
 
         setLoading(false);
       }, 1500);
     } catch (err: any) {
-      setError(
-        err.response?.data?.detail || 'Failed to detect error. Please try again.'
-      );
+      setError(err?.message || 'Failed to detect error. Please try again.');
       setLoading(false);
     }
   };

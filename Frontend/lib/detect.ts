@@ -20,6 +20,8 @@ export type DetectQueryResult = {
   confidence: number;
 };
 
+export type DetectionResult = DetectQueryResult;
+
 const REPAIR_KEYWORDS: Array<{ category: string; words: string[] }> = [
   { category: 'GPU Overheat', words: ['gpu', 'graphics', 'overheat', 'thermal', 'temperature', 'fan'] },
   { category: 'Blue Screen (BSOD)', words: ['blue screen', 'bsod', 'crash', 'freeze', 'hang'] },
@@ -63,4 +65,18 @@ export function detectQueryType(input: string): DetectQueryResult {
   }
 
   return { type: 'repair', category: 'General Repair', confidence: 0.4 };
+}
+
+export function getMatchReason(item: Record<string, unknown>, mode: 'repair' | 'product'): string {
+  if (mode === 'repair') {
+    const districtMatch = item.district_match === 1 ? 'Located in your district. ' : '';
+    const verified = item.verified ? 'Verified service center. ' : '';
+    const score = typeof item.score === 'number' ? `High relevance score (${item.score.toFixed(2)}). ` : '';
+    return `${districtMatch}${verified}${score}`.trim() || 'Good overall match for your issue.';
+  }
+
+  const stock = typeof item.stock_status === 'string' ? item.stock_status.toLowerCase() : '';
+  const stockReason = stock.includes('in stock') ? 'Currently in stock. ' : '';
+  const priceReason = typeof item.price_lkr === 'number' ? 'Price aligns with your selected budget. ' : '';
+  return `${stockReason}${priceReason}`.trim() || 'Relevant product match for your query.';
 }
