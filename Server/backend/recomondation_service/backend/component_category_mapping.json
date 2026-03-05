@@ -1,0 +1,68 @@
+{
+  "Performance": [
+    "RAM Upgrade",
+    "Laptop RAM Upgrade",
+    "RAM Slot Cleaning",
+    "SSD Upgrade",
+    "Laptop SSD Upgrade",
+    "NVMe SSD Upgrade",
+    "HDD Upgrade",
+    "External SSD",
+    "GPU Upgrade",
+    "CPU Upgrade",
+    "CPU Fan Replacement",
+    "Laptop Fan Replacement",
+    "CPU Cooler Upgrade",
+    "Liquid Cooler Upgrade",
+    "Case Fan Upgrade",
+    "Fan Hub Installation",
+    "Thermal Paste Reapply",
+    "Thermal Pad Replacement",
+    "Thermal Sensors",
+    "Dust Cleaning Kit",
+    "Keyboard Upgrade",
+    "Mouse Upgrade",
+    "Sound Card Upgrade"
+  ],
+  "Power": [
+    "PSU Upgrade",
+    "UPS Upgrade",
+    "Power Cable Replacement",
+    "GPU Power Cable",
+    "Laptop Charger Replacement",
+    "Laptop Battery Replacement",
+    "Surge Protector",
+    "BIOS Battery Replacement",
+    "CMOS Reset"
+  ],
+  "Network": [
+    "WiFi Adapter Upgrade",
+    "Bluetooth Adapter",
+    "Ethernet Card",
+    "Router Upgrade",
+    "USB Hub Upgrade"
+  ],
+  "Display": [
+    "Monitor Replacement",
+    "Monitor or GPU Check",
+    "Display Cable Replacement",
+    "HDMI Cable Replacement",
+    "Monitor Stand Upgrade"
+  ],
+  "Storage": [
+    "SSD Upgrade",
+    "Laptop SSD Upgrade",
+    "NVMe SSD Upgrade",
+    "HDD Upgrade",
+    "External SSD",
+    "SATA Cable Replacement"
+  ],
+  "Other": [
+    "Capture Card",
+    "Case RGB Controller",
+    "I/O Shield Fix",
+    "Motherboard Replacement",
+    "Power Button Replacement"
+  ]
+}
+

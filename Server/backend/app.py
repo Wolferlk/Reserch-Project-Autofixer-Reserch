@@ -4,6 +4,7 @@ from pathlib import Path
 import shutil
 import uuid
 import logging
+from typing import Dict
 
 from backend.ocr.ocr_engine import extract_text, clean_text
 from backend.retriever.kb_retriever import KBRetriever
@@ -40,6 +41,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+SERVICE_STATUS: Dict[str, str] = {}
+
+
+def _mount_service(service_name: str, path: str, module_path: str) -> None:
+    """Import and mount sub-services without crashing the main API."""
+    try:
+        module = __import__(module_path, fromlist=["app"])
+        sub_app = getattr(module, "app", None)
+        if sub_app is None:
+            raise RuntimeError(f"No 'app' object found in {module_path}")
+        app.mount(path, sub_app)
+        SERVICE_STATUS[service_name] = "mounted"
+        logger.info("✅ Mounted %s service at %s", service_name, path)
+    except Exception as exc:
+        SERVICE_STATUS[service_name] = f"failed: {exc.__class__.__name__}"
+        logger.exception("❌ Failed to mount %s service (%s)", service_name, module_path)
+
+
+_mount_service("chatbot", "/chatbot", "backend.chatbot_winerror.ml_backend.app")
+_mount_service("recommendation", "/recommendation", "backend.recomondation_service.backend.app")
+
 # --------------------------------------------------
 # Upload directory
 # --------------------------------------------------
@@ -61,6 +83,11 @@ logger.info("✅ Knowledge base loaded")
 def root():
     logger.info("🩺 Health check called")
     return {"status": "Auto Fixer V6 backend running"}
+
+
+@app.get("/services/status")
+def services_status():
+    return SERVICE_STATUS
 
 # --------------------------------------------------
 # Analyze endpoint
