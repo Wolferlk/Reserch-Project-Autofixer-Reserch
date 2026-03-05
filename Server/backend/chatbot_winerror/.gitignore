@@ -1,0 +1,64 @@
+# Node / Next.js
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.log
+
+# Environment files
+.env
+.env.*
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor directories
+.vscode/
+.idea/
+
+# Virtual environment folders
+.venv/
+env/
+
+# Byte-compiled / optimized / DLL files
+*.so
+*.dylib
+
+# Test / coverage
+.pytest_cache/
+.coverage
+coverage.xml
+
+# Misc
+*.egg
+*.log
+*.sqlite3
+
+# Ignore build artifacts
+dist/
+build/
+*.egg-info/
+
+# Do NOT ignore Datasets directory (explicitly keep it tracked)
+# Datasets/
+
+# Project docs and helper scripts (requested to ignore)
+HOW_TO_START.md
+NEW_FEATURES.md
+START_HERE.txt
+TECHNICAL_SPECS.md
+TRAINING_UPDATE.md
+VOICE_FEATURE.md
+retrain_model.bat
+start_backend.bat
+start_frontend.bat

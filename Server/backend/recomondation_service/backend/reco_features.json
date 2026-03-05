@@ -1,0 +1,45 @@
+{
+  "numeric_features": [
+    "avg_rating",
+    "reviews",
+    "reviews_ln",
+    "verified",
+    "turnaround_days",
+    "quality_score_rule",
+    "district_match",
+    "type_match",
+    "budget_fit",
+    "urgency_penalty"
+  ],
+  "categorical_features": [
+    "error_type",
+    "budget",
+    "urgency",
+    "user_district",
+    "shop_type",
+    "district"
+  ],
+  "model_type": "GradientBoosting",
+  "best_params": {
+    "ccp_alpha": 0.0,
+    "criterion": "friedman_mse",
+    "init": null,
+    "learning_rate": 0.01,
+    "loss": "log_loss",
+    "max_depth": 3,
+    "max_features": null,
+    "max_leaf_nodes": null,
+    "min_impurity_decrease": 0.0,
+    "min_samples_leaf": 4,
+    "min_samples_split": 4,
+    "min_weight_fraction_leaf": 0.0,
+    "n_estimators": 100,
+    "n_iter_no_change": null,
+    "random_state": 42,
+    "subsample": 1.0,
+    "tol": 0.0001,
+    "validation_fraction": 0.1,
+    "verbose": 0,
+    "warm_start": false
+  }
+}
