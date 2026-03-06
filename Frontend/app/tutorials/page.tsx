@@ -58,6 +58,16 @@ interface ChatMessage {
   timestamp: Date
 }
 
+type TutorialChatApiResponse = {
+  software_scope?: string
+  issue_type?: string
+  answer?: string
+}
+
+type SoftwareListApiResponse = {
+  softwares?: string[]
+}
+
 // ─── Data ─────────────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
@@ -104,9 +114,60 @@ const TUTORIALS: Tutorial[] = [
   },
 ]
 
-// ─── AI chat engine (swap fetch call for your real API) ────────────────────────
+const RAW_API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_RECO_API_URL ||
+  'http://localhost:8001'
+).replace(/\/+$/, '')
 
-async function getAIResponse(messages: ChatMessage[], userMessage: string): Promise<string> {
+async function fetchSoftwareList(): Promise<string[]> {
+  const response = await fetch(`${RAW_API_BASE_URL}/software-instruction/softwares`)
+  if (!response.ok) {
+    throw new Error(`Software list API error ${response.status}`)
+  }
+  const data = (await response.json()) as SoftwareListApiResponse
+  if (!Array.isArray(data.softwares)) {
+    return []
+  }
+  return data.softwares
+}
+
+function formatSoftwareLabel(software: string): string {
+  return software
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (ch) => ch.toUpperCase())
+}
+
+// ─── AI chat engine (now connected to backend) ─────────────────────────────────
+
+async function getAIResponse(
+  userMessage: string,
+  selectedSoftware: string,
+): Promise<string> {
+  const response = await fetch(`${RAW_API_BASE_URL}/software-instruction/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message: userMessage,
+      software: selectedSoftware === 'all' ? undefined : selectedSoftware,
+    }),
+  })
+
+  if (!response.ok) {
+    const detail = await response.text()
+    throw new Error(`Tutorial API error ${response.status}: ${detail}`)
+  }
+
+  const data = (await response.json()) as TutorialChatApiResponse
+
+  if (!data.answer?.trim()) {
+    return 'No response received from tutorial service.'
+  }
+
+  return data.answer
+}
+
+async function getFallbackResponse(userMessage: string): Promise<string> {
   const t = userMessage.toLowerCase()
 
   // ── Photoshop ──
@@ -188,7 +249,19 @@ function RenderMarkdown({ content }: { content: string }) {
 
 // ─── Chat panel ───────────────────────────────────────────────────────────────
 
-function ChatPanel({ onClose }: { onClose: () => void }) {
+function ChatPanel({
+  onClose,
+  selectedSoftware,
+  softwareOptions,
+  softwareLoading,
+  onSoftwareChange,
+}: {
+  onClose: () => void
+  selectedSoftware: string
+  softwareOptions: string[]
+  softwareLoading: boolean
+  onSoftwareChange: (software: string) => void
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -211,20 +284,15 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
     setInput('')
     setLoading(true)
 
-    // ── Replace this with your real API call ──────────────────────────────────
-    // const res = await fetch('/api/tutorials-chat', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ message: input, history: messages }),
-    // })
-    // const data = await res.json()
-    // const reply = data.content
-    // ─────────────────────────────────────────────────────────────────────────
-
-    await new Promise(r => setTimeout(r, 900 + Math.random() * 600))
-    const reply = await getAIResponse(messages, input)
-    setLoading(false)
-    setMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date() }])
+    try {
+      const reply = await getAIResponse(input, selectedSoftware)
+      setMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date() }])
+    } catch {
+      const reply = await getFallbackResponse(input)
+      setMessages(prev => [...prev, { role: 'assistant', content: reply, timestamp: new Date() }])
+    } finally {
+      setLoading(false)
+    }
   }
 
   const SUGGESTIONS = [
@@ -261,6 +329,20 @@ function ChatPanel({ onClose }: { onClose: () => void }) {
         <button onClick={onClose} className="ml-auto p-2 rounded-xl hover:bg-white/10 text-gray-400 hover:text-white transition-colors">
           <X size={16} />
         </button>
+      </div>
+      <div className="px-4 py-3 border-b border-white/8 bg-white/[0.02] flex-shrink-0">
+        <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-2">Software Context</p>
+        <select
+          value={selectedSoftware}
+          onChange={e => onSoftwareChange(e.target.value)}
+          disabled={softwareLoading}
+          className="w-full px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500/50 disabled:opacity-60"
+        >
+          <option value="all">All software</option>
+          {softwareOptions.map(software => (
+            <option key={software} value={software}>{formatSoftwareLabel(software)}</option>
+          ))}
+        </select>
       </div>
 
       {/* Messages */}
@@ -403,6 +485,36 @@ export default function Tutorials() {
   const [category, setCategory]         = useState('all')
   const [chatOpen, setChatOpen]         = useState(false)
   const [showAllCats, setShowAllCats]   = useState(false)
+  const [softwareOptions, setSoftwareOptions] = useState<string[]>([])
+  const [selectedSoftware, setSelectedSoftware] = useState('all')
+  const [softwareLoading, setSoftwareLoading] = useState(true)
+  const [softwareError, setSoftwareError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let isMounted = true
+    const loadSoftwares = async () => {
+      setSoftwareLoading(true)
+      setSoftwareError(null)
+      try {
+        const softwares = await fetchSoftwareList()
+        if (isMounted) {
+          setSoftwareOptions(softwares)
+        }
+      } catch {
+        if (isMounted) {
+          setSoftwareError('Failed to load software list from backend.')
+        }
+      } finally {
+        if (isMounted) {
+          setSoftwareLoading(false)
+        }
+      }
+    }
+    loadSoftwares()
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   const filtered = TUTORIALS.filter(t => {
     const q = search.toLowerCase()
@@ -458,6 +570,23 @@ export default function Tutorials() {
 
             {/* Search + filter bar */}
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }}>
+              <div className="mb-4 p-4 rounded-2xl border border-white/10 bg-white/[0.03]">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-2">Step 1: Select Software</p>
+                <select
+                  value={selectedSoftware}
+                  onChange={e => setSelectedSoftware(e.target.value)}
+                  disabled={softwareLoading}
+                  className="w-full px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white text-sm focus:outline-none focus:border-purple-500/50 disabled:opacity-60"
+                >
+                  <option value="all">All software</option>
+                  {softwareOptions.map(software => (
+                    <option key={software} value={software}>{formatSoftwareLabel(software)}</option>
+                  ))}
+                </select>
+                {softwareLoading && <p className="text-xs text-gray-500 mt-2">Loading software list...</p>}
+                {softwareError && <p className="text-xs text-red-400 mt-2">{softwareError}</p>}
+              </div>
+
               <div className="relative mb-4">
                 <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" />
                 <input type="text" placeholder="Search tutorials…" value={search} onChange={e => setSearch(e.target.value)}
@@ -569,7 +698,13 @@ export default function Tutorials() {
                 className="lg:sticky lg:top-24 lg:h-[calc(100vh-8rem)]"
                 style={{ minHeight: 600 }}
               >
-                <ChatPanel onClose={() => setChatOpen(false)} />
+                <ChatPanel
+                  onClose={() => setChatOpen(false)}
+                  selectedSoftware={selectedSoftware}
+                  softwareOptions={softwareOptions}
+                  softwareLoading={softwareLoading}
+                  onSoftwareChange={setSelectedSoftware}
+                />
               </motion.div>
             )}
           </AnimatePresence>
