@@ -1,10 +1,12 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from pathlib import Path
 import shutil
 import uuid
 import logging
-from typing import Dict
+import sys
+from typing import Dict, Any, Optional
 
 from backend.ocr.ocr_engine import extract_text, clean_text
 from backend.retriever.kb_retriever import KBRetriever
@@ -42,6 +44,8 @@ app.add_middleware(
 )
 
 SERVICE_STATUS: Dict[str, str] = {}
+SOFTWARE_INSTRUCTION_STATUS = "not_loaded"
+_SOFTWARE_INSTRUCTION_CACHE: Dict[str, Any] = {}
 
 
 def _mount_service(service_name: str, path: str, module_path: str) -> None:
@@ -87,7 +91,140 @@ def root():
 
 @app.get("/services/status")
 def services_status():
-    return SERVICE_STATUS
+    return {
+        **SERVICE_STATUS,
+        "software_instruction": SOFTWARE_INSTRUCTION_STATUS,
+    }
+
+
+class SoftwareInstructionRequest(BaseModel):
+    message: str
+    software: Optional[str] = None
+
+
+def _normalize_software_name(name: str) -> str:
+    return (
+        name.strip()
+        .lower()
+        .replace("-", "_")
+        .replace(" ", "_")
+    )
+
+
+def _load_software_instruction_modules() -> Dict[str, Any]:
+    global SOFTWARE_INSTRUCTION_STATUS
+
+    if _SOFTWARE_INSTRUCTION_CACHE:
+        return _SOFTWARE_INSTRUCTION_CACHE
+
+    try:
+        software_src = Path(__file__).resolve().parent / "Software_Instruction_server" / "src"
+        if str(software_src) not in sys.path:
+            sys.path.insert(0, str(software_src))
+
+        from retrieval.search_engine import get_available_softwares, search  # type: ignore
+        from response_generator.generate_response import generate_detailed_response  # type: ignore
+
+        _SOFTWARE_INSTRUCTION_CACHE["get_available_softwares"] = get_available_softwares
+        _SOFTWARE_INSTRUCTION_CACHE["search"] = search
+        _SOFTWARE_INSTRUCTION_CACHE["generate_detailed_response"] = generate_detailed_response
+        SOFTWARE_INSTRUCTION_STATUS = "loaded"
+        return _SOFTWARE_INSTRUCTION_CACHE
+    except Exception as exc:
+        SOFTWARE_INSTRUCTION_STATUS = f"failed: {exc.__class__.__name__}"
+        raise
+
+
+def _resolve_software_scope(software: Optional[str], available: list[str]) -> Optional[str]:
+    if not software:
+        return None
+
+    requested = _normalize_software_name(software)
+    normalized_available = {_normalize_software_name(s): s for s in available}
+
+    alias_map = {
+        "ps": "photoshop",
+        "adobe_photoshop": "photoshop",
+        "illustrator": "illutrator",
+        "adobe_illustrator": "illutrator",
+        "ae": "after_effects",
+        "aftereffects": "after_effects",
+        "premiere": "premiere_pro",
+        "premierepro": "premiere_pro",
+        "androidstudio": "android_studio",
+        "intellij": "intellij_idea",
+        "vscode": "vs_code",
+        "visual_studio_code": "vs_code",
+        "7zip": "7_zip",
+    }
+
+    candidate = alias_map.get(requested, requested)
+    return normalized_available.get(candidate)
+
+
+@app.get("/software-instruction/softwares")
+def list_softwares():
+    try:
+        modules = _load_software_instruction_modules()
+        get_available_softwares = modules["get_available_softwares"]
+        softwares = get_available_softwares()
+        return {
+            "softwares": softwares,
+            "count": len(softwares),
+        }
+    except Exception as exc:
+        logger.exception("Failed to list software instruction scopes")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Software instruction service unavailable: {exc.__class__.__name__}",
+        )
+
+
+@app.post("/software-instruction/chat")
+def software_instruction_chat(payload: SoftwareInstructionRequest):
+    message = payload.message.strip()
+    if len(message) < 3:
+        raise HTTPException(status_code=422, detail="Please provide a longer question.")
+
+    try:
+        modules = _load_software_instruction_modules()
+        search = modules["search"]
+        generate_detailed_response = modules["generate_detailed_response"]
+        get_available_softwares = modules["get_available_softwares"]
+
+        available_softwares = get_available_softwares()
+        selected_software = _resolve_software_scope(payload.software, available_softwares)
+
+        predicted_type, results = search(message, selected_software=selected_software)
+        response_text = generate_detailed_response(message, predicted_type, results)
+
+        evidence = []
+        if results is not None and not results.empty and "text" in results.columns:
+            for idx, row in enumerate(results.head(3).itertuples(index=False), start=1):
+                row_dict = row._asdict() if hasattr(row, "_asdict") else {}
+                snippet = str(row_dict.get("text", ""))[:220].replace("\n", " ").strip()
+                if snippet:
+                    evidence.append({"rank": idx, "snippet": snippet})
+
+        issue_type = str(predicted_type).replace("_", " ").title()
+        scope = selected_software or "All software"
+
+        return {
+            "software_scope": scope,
+            "issue_type": issue_type,
+            "answer": response_text,
+            "evidence": evidence,
+            "result_count": 0 if results is None else int(len(results)),
+        }
+
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Software instruction chat failed")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Software instruction chat failed: {exc.__class__.__name__}",
+        )
 
 # --------------------------------------------------
 # Analyze endpoint

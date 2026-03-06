@@ -1,0 +1,29 @@
+# PDF processing
+pdfplumber==0.11.0
+pdfminer.six==20221105
+
+# Data handling
+pandas==2.2.2
+
+# Progress bars
+tqdm==4.66.4
+
+# Environment variables
+python-dotenv==1.0.1
+
+# Fast JSON
+orjson==3.10.3
+
+# NLP / embeddings (optional future use)
+numpy==1.26.4
+scikit-learn==1.4.2
+
+
+pandas
+scikit-learn
+joblib
+torch
+transformers
+sentencepiece
+tokenizer
+scikit-learn
