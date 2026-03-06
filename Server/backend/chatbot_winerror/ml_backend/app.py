@@ -1,7 +1,7 @@
 """
 FastAPI backend for error detection using ML model
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import pandas as pd
@@ -9,6 +9,8 @@ import numpy as np
 from pathlib import Path
 import os
 import sys
+import logging
+import time
 from typing import Optional
 from threading import Lock
 
@@ -19,6 +21,13 @@ if str(HERE) not in sys.path:
 from step_analyzer import get_step_difficulty, extract_commands, get_risk_warning
 
 app = FastAPI(title="Error Detection API", version="1.0.0")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("AUTO_FIXER")
+logger.info("🚀 Chatbot backend initializing...")
 
 # CORS middleware
 app.add_middleware(
@@ -35,6 +44,22 @@ error_database = None
 embeddings = None
 model_load_error: Optional[str] = None
 model_load_lock = Lock()
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    started = time.perf_counter()
+    logger.info("➡️ [chatbot][%s] %s", request.method, request.url.path)
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "⬅️ [chatbot][%s] %s | status=%s | %.2fms",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
 
 class ErrorRequest(BaseModel):
     user_error: str
@@ -73,16 +98,16 @@ def load_model():
             "Missing dependency 'sentence-transformers'. Install it in the active environment."
         ) from exc
     
-    print("Loading sentence transformer model...")
+    logger.info("📚 Loading sentence transformer model...")
     model = SentenceTransformer(str(models_path / 'sentence_transformer'))
     
-    print("Loading error database...")
+    logger.info("📚 Loading chatbot error database...")
     error_database = pd.read_pickle(models_path / 'error_database_no_emb.pkl')
     
-    print("Loading embeddings...")
+    logger.info("📚 Loading chatbot embeddings...")
     embeddings = np.load(models_path / 'embeddings.npy')
     
-    print(f"Model loaded successfully! {len(error_database)} errors in database.")
+    logger.info("✅ Chatbot model loaded | errors_in_db=%s", len(error_database))
     model_load_error = None
 
 def is_model_ready() -> bool:
@@ -106,18 +131,21 @@ def ensure_model_loaded() -> bool:
             error_database = None
             embeddings = None
             model_load_error = str(exc)
+            logger.exception("❌ Chatbot model lazy-load failed")
             return False
 
 @app.on_event("startup")
 async def startup_event():
     """Load model on startup"""
     global model_load_error
+    logger.info("📚 Chatbot startup model load started")
     try:
         load_model()
+        logger.info("✅ Chatbot startup model load completed")
     except Exception as e:
         model_load_error = str(e)
-        print(f"Warning: {e}")
-        print("The API will not fully work until the model and dependencies are available.")
+        logger.warning("⚠️ Chatbot startup model load failed: %s", e)
+        logger.warning("⚠️ Chatbot API will run in degraded mode until model is available")
 
 @app.get("/")
 async def root():
@@ -222,6 +250,7 @@ def estimate_time(category: str, risk: str, num_steps: int) -> str:
 @app.post("/detect-error", response_model=ErrorResponse)
 async def detect_error(request: ErrorRequest):
     """Detect error and return solution steps"""
+    logger.info("🧠 /detect-error request received")
     if not request.user_error or not request.user_error.strip():
         raise HTTPException(status_code=400, detail="user_error cannot be empty")
     
@@ -262,6 +291,7 @@ async def detect_error(request: ErrorRequest):
 @app.post("/detect-error-multi", response_model=MultiSolutionResponse)
 async def detect_error_multi(request: ErrorRequest, limit: int = 3):
     """Detect error and return top N solutions"""
+    logger.info("🧠 /detect-error-multi request received | limit=%s", limit)
     if not request.user_error or not request.user_error.strip():
         raise HTTPException(status_code=400, detail="user_error cannot be empty")
     

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pathlib import Path
@@ -6,6 +6,7 @@ import shutil
 import uuid
 import logging
 import sys
+import time
 from typing import Dict, Any, Optional
 
 from backend.ocr.ocr_engine import extract_text, clean_text
@@ -46,6 +47,22 @@ app.add_middleware(
 SERVICE_STATUS: Dict[str, str] = {}
 SOFTWARE_INSTRUCTION_STATUS = "not_loaded"
 _SOFTWARE_INSTRUCTION_CACHE: Dict[str, Any] = {}
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    started = time.perf_counter()
+    logger.info("➡️ [%s] %s", request.method, request.url.path)
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "⬅️ [%s] %s | status=%s | %.2fms",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
 
 
 def _mount_service(service_name: str, path: str, module_path: str) -> None:
@@ -91,6 +108,7 @@ def root():
 
 @app.get("/services/status")
 def services_status():
+    logger.info("🧾 Service status requested")
     return {
         **SERVICE_STATUS,
         "software_instruction": SOFTWARE_INSTRUCTION_STATUS,
@@ -118,6 +136,7 @@ def _load_software_instruction_modules() -> Dict[str, Any]:
         return _SOFTWARE_INSTRUCTION_CACHE
 
     try:
+        logger.info("📚 Loading software instruction modules...")
         software_src = Path(__file__).resolve().parent / "Software_Instruction_server" / "src"
         if str(software_src) not in sys.path:
             sys.path.insert(0, str(software_src))
@@ -129,9 +148,11 @@ def _load_software_instruction_modules() -> Dict[str, Any]:
         _SOFTWARE_INSTRUCTION_CACHE["search"] = search
         _SOFTWARE_INSTRUCTION_CACHE["generate_detailed_response"] = generate_detailed_response
         SOFTWARE_INSTRUCTION_STATUS = "loaded"
+        logger.info("✅ Software instruction modules loaded")
         return _SOFTWARE_INSTRUCTION_CACHE
     except Exception as exc:
         SOFTWARE_INSTRUCTION_STATUS = f"failed: {exc.__class__.__name__}"
+        logger.exception("❌ Failed to load software instruction modules")
         raise
 
 
@@ -164,6 +185,7 @@ def _resolve_software_scope(software: Optional[str], available: list[str]) -> Op
 
 @app.get("/software-instruction/softwares")
 def list_softwares():
+    logger.info("📦 Listing software instruction scopes")
     try:
         modules = _load_software_instruction_modules()
         get_available_softwares = modules["get_available_softwares"]
@@ -182,6 +204,7 @@ def list_softwares():
 
 @app.post("/software-instruction/chat")
 def software_instruction_chat(payload: SoftwareInstructionRequest):
+    logger.info("💬 Software instruction chat request received")
     message = payload.message.strip()
     if len(message) < 3:
         raise HTTPException(status_code=422, detail="Please provide a longer question.")

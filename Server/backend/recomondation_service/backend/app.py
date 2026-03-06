@@ -17,7 +17,7 @@ The application uses:
 """
 
 # Standard library imports
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from typing import Optional, List, Tuple, Dict, Any
@@ -32,12 +32,21 @@ import joblib
 import numpy as np
 import csv
 import datetime
+import logging
+import time
 import pandas as pd
 from dotenv import load_dotenv
 
 HERE = Path(__file__).parent.resolve()
 if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+)
+logger = logging.getLogger("AUTO_FIXER")
+logger.info("🚀 Recommendation backend initializing...")
 
 # Import hierarchical inference system (rule-based + ML)
 # This provides high-confidence rule matching and hierarchical component prediction
@@ -47,7 +56,7 @@ try:
     from feedback_storage import save_feedback, LOW_CONFIDENCE_THRESHOLD  # Feedback collection for low-confidence predictions
     HIERARCHICAL_AVAILABLE = True
 except ImportError as e:
-    print(f"Hierarchical system not available: {e}")
+    logger.info(f"Hierarchical system not available: {e}")
     HIERARCHICAL_AVAILABLE = False
     # Set fallback values if modules are unavailable
     match_rule = None
@@ -68,6 +77,7 @@ except Exception:
 # ─────────────────────────────────────────────────────────
 # Set up directory paths and load environment variables
 DATA_DIR = (HERE.parent / "data").resolve()
+ENV_PATH = (HERE / ".env").resolve()
 
 MODEL_PATH = HERE / "reco_model.pkl"
 FEATURES_PATH = HERE / "reco_features.json"
@@ -80,17 +90,19 @@ SHOPS_CSV = DATA_DIR / "shops.csv"
 PRODUCTS_CSV = DATA_DIR / "products.csv"
 FEEDBACK_CSV = DATA_DIR / "feedback.csv"
 
-load_dotenv()
+# Always load the .env from this backend folder, regardless of process working directory.
+load_dotenv(dotenv_path=ENV_PATH)
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
 
 # Debug: Print env status (without exposing keys)
-print(f"Environment check:")
-print(f"   .env file path: {HERE / '.env'}")
-print(f"   SUPABASE_URL: {'Set' if SUPABASE_URL else 'Not set'}")
-print(f"   SUPABASE_KEY: {'Set' if SUPABASE_KEY else 'Not set'}")
+logger.info(f"Environment check:")
+logger.info(f"   .env file path: {ENV_PATH}")
+logger.info(f"   .env file exists: {'Yes' if ENV_PATH.exists() else 'No'}")
+logger.info(f"   SUPABASE_URL: {'Set' if SUPABASE_URL else 'Not set'}")
+logger.info(f"   SUPABASE_KEY: {'Set' if SUPABASE_KEY else 'Not set'}")
 if SUPABASE_URL:
-    print(f"   Supabase URL: {SUPABASE_URL[:30]}...")
+    logger.info(f"   Supabase URL: {SUPABASE_URL[:30]}...")
 
 # ─────────────────────────────────────────────────────────
 # 1) Connect Supabase (optional)
@@ -104,33 +116,33 @@ if SUPABASE_URL and SUPABASE_KEY and create_client is not None:
         try:
             test_response = supabase.table("shops").select("shop_id").limit(1).execute()
             USE_SUPABASE = True
-            print("Connected to Supabase")
-            print(f"   URL: {SUPABASE_URL[:50]}...")
+            logger.info("Connected to Supabase")
+            logger.info(f"   URL: {SUPABASE_URL[:50]}...")
             if test_response.data:
-                print(f"   Test query successful - found {len(test_response.data)} shop(s)")
+                logger.info(f"   Test query successful - found {len(test_response.data)} shop(s)")
             else:
-                print("   Test query returned no data (table may be empty)")
+                logger.info("   Test query returned no data (table may be empty)")
         except Exception as test_error:
             error_msg = str(test_error)
-            print(f"Supabase connection test failed: {error_msg}")
+            logger.info(f"Supabase connection test failed: {error_msg}")
             if "requested path is invalid" in error_msg.lower() or "relation" in error_msg.lower():
-                print(f"   This usually means the 'shops' table doesn't exist in Supabase.")
-                print(f"   Please create the table in your Supabase project or check table name.")
-            print("Will use CSV files as fallback")
+                logger.info(f"   This usually means the 'shops' table doesn't exist in Supabase.")
+                logger.info(f"   Please create the table in your Supabase project or check table name.")
+            logger.info("Will use CSV files as fallback")
             USE_SUPABASE = False
     except Exception as e:
-        print(f"Supabase init failed: {e}")
-        print("Falling back to CSV files")
+        logger.info(f"Supabase init failed: {e}")
+        logger.info("Falling back to CSV files")
         import traceback
         traceback.print_exc()
 else:
     if not SUPABASE_URL:
-        print("SUPABASE_URL not set in environment variables")
+        logger.info("SUPABASE_URL not set in environment variables")
     if not SUPABASE_KEY:
-        print("SUPABASE_KEY not set in environment variables")
+        logger.info("SUPABASE_KEY not set in environment variables")
     if create_client is None:
-        print("Supabase Python client library not installed")
-    print("Using CSV files if available.")
+        logger.info("Supabase Python client library not installed")
+    logger.info("Using CSV files if available.")
 
 # ─────────────────────────────────────────────────────────
 # Helper Functions
@@ -216,11 +228,11 @@ if SHOPS_CSV.exists():
             shops_df["verified"] = shops_df["verified"].astype(str).str.lower().isin(
                 ["true", "t", "1", "yes", "y", "maybe"]
             )
-        print(f"Loaded shops CSV ({len(shops_df)} rows)")
+        logger.info(f"Loaded shops CSV ({len(shops_df)} rows)")
     except Exception as e:
-        print(f"Failed to load shops CSV: {e}")
+        logger.info(f"Failed to load shops CSV: {e}")
 else:
-    print(f"Shops CSV not found at: {SHOPS_CSV}")
+    logger.info(f"Shops CSV not found at: {SHOPS_CSV}")
 
 # ─────────────────────────────────────────────────────────
 # 3) Load model & features
@@ -234,10 +246,10 @@ if MODEL_PATH.exists() and FEATURES_PATH.exists():
         model = joblib.load(MODEL_PATH)
         with open(FEATURES_PATH, "r", encoding="utf-8") as f:
             features_config = json.load(f)  # kept for parity
-        print("Loaded ranking model and features.")
+        logger.info("Loaded ranking model and features.")
     except Exception as e:
         rank_model_error = f"Failed to load ranking artifacts: {e}"
-        print(rank_model_error)
+        logger.info(rank_model_error)
 else:
     missing = []
     if not MODEL_PATH.exists():
@@ -245,7 +257,7 @@ else:
     if not FEATURES_PATH.exists():
         missing.append(str(FEATURES_PATH))
     rank_model_error = f"Missing ranking artifacts: {', '.join(missing)}"
-    print(rank_model_error)
+    logger.info(rank_model_error)
 
 # ─────────────────────────────────────────────────────────
 # 3.5) Load NLP Models (optional)
@@ -255,24 +267,24 @@ error_nlp_model: Optional[Dict[str, Any]] = None
 if ERROR_NLP_MODEL_PATH.exists():
     try:
         error_nlp_model = joblib.load(ERROR_NLP_MODEL_PATH)
-        print(f"Loaded NLP error-type model from {ERROR_NLP_MODEL_PATH}")
+        logger.info(f"Loaded NLP error-type model from {ERROR_NLP_MODEL_PATH}")
     except Exception as e:
-        print(f"Failed to load error-type NLP model: {e}")
+        logger.info(f"Failed to load error-type NLP model: {e}")
         error_nlp_model = None
 else:
-    print(f"Error-type NLP model not found at: {ERROR_NLP_MODEL_PATH}. Will use rules only.")
+    logger.info(f"Error-type NLP model not found at: {ERROR_NLP_MODEL_PATH}. Will use rules only.")
 
 # Load Product Category NLP Model
 product_nlp_model: Optional[Dict[str, Any]] = None
 if PRODUCT_NLP_MODEL_PATH.exists():
     try:
         product_nlp_model = joblib.load(PRODUCT_NLP_MODEL_PATH)
-        print(f"Loaded NLP product-category model from {PRODUCT_NLP_MODEL_PATH}")
+        logger.info(f"Loaded NLP product-category model from {PRODUCT_NLP_MODEL_PATH}")
     except Exception as e:
-        print(f"Failed to load product-category NLP model: {e}")
+        logger.info(f"Failed to load product-category NLP model: {e}")
         product_nlp_model = None
 else:
-    print(f"Product-category NLP model not found at: {PRODUCT_NLP_MODEL_PATH}. Will use rules only.")
+    logger.info(f"Product-category NLP model not found at: {PRODUCT_NLP_MODEL_PATH}. Will use rules only.")
 
 # Load Product Need Model (for component recommendation)
 PRODUCT_NEED_MODEL_PATH = HERE / "product_need_model.pkl"
@@ -280,12 +292,12 @@ product_need_model = None
 if PRODUCT_NEED_MODEL_PATH.exists():
     try:
         product_need_model = joblib.load(PRODUCT_NEED_MODEL_PATH)
-        print("Loaded product need model")
+        logger.info("Loaded product need model")
     except Exception as e:
-        print(f"Failed to load product need model: {e}")
+        logger.info(f"Failed to load product need model: {e}")
         product_need_model = None
 else:
-    print("product_need_model.pkl not found – product need ML disabled")
+    logger.info("product_need_model.pkl not found – product need ML disabled")
 
 # Initialize COMPONENT_INFO dictionary
 COMPONENT_INFO: dict[str, dict[str, str]] = {}
@@ -310,11 +322,11 @@ try:
                 "extra_explanation": str(row.get("extra_explanation", "")).strip() or None,
             }
         COMPONENT_INFO.update(tmp)
-        print(f"Loaded component info for {len(COMPONENT_INFO)} labels from CSV")
+        logger.info(f"Loaded component info for {len(COMPONENT_INFO)} labels from CSV")
     else:
-        print("hardware_component_dataset_10000.csv not found for COMPONENT_INFO")
+        logger.info("hardware_component_dataset_10000.csv not found for COMPONENT_INFO")
 except Exception as e:
-    print(f"Failed to load COMPONENT_INFO from CSV: {e}")
+    logger.info(f"Failed to load COMPONENT_INFO from CSV: {e}")
 
 
 
@@ -328,10 +340,10 @@ nlp_model: Optional[Dict[str, Any]] = None
 if NLP_MODEL_PATH.exists() and error_nlp_model is None:
     try:
         nlp_model = joblib.load(NLP_MODEL_PATH)
-        print(f"Loaded legacy NLP model from {NLP_MODEL_PATH}")
+        logger.info(f"Loaded legacy NLP model from {NLP_MODEL_PATH}")
         error_nlp_model = nlp_model  # Use as fallback
     except Exception as e:
-        print(f"Failed to load legacy NLP model: {e}")
+        logger.info(f"Failed to load legacy NLP model: {e}")
 
 # ─────────────────────────────────────────────────────────
 # 4) FastAPI app & CORS
@@ -360,6 +372,22 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    started = time.perf_counter()
+    logger.info("➡️ [recommendation][%s] %s", request.method, request.url.path)
+    response = await call_next(request)
+    elapsed_ms = (time.perf_counter() - started) * 1000
+    logger.info(
+        "⬅️ [recommendation][%s] %s | status=%s | %.2fms",
+        request.method,
+        request.url.path,
+        response.status_code,
+        elapsed_ms,
+    )
+    return response
 
 
 def ensure_rank_model_loaded() -> None:
@@ -1160,7 +1188,7 @@ def check_supabase():
 def rank_auto(req: RankRequest):
     try:
         # Logging for debugging consistency
-        print(
+        logger.info(
             f"[RANK_AUTO] error_type='{req.error_type}', "
             f"budget='{req.budget}', urgency='{req.urgency}', "
             f"user_district='{req.user_district}', top_k={req.top_k}, mix_results={req.mix_results}"
@@ -1175,7 +1203,7 @@ def rank_auto(req: RankRequest):
             raise HTTPException(status_code=400, detail="user_district is required. Please select a district.")
         
         desired_type = ERR_TO_TYPE.get(req.error_type, "repair_shop")
-        print(f"Processing request: error_type='{req.error_type}', district='{req.user_district}', desired_type='{desired_type}'")
+        logger.info(f"Processing request: error_type='{req.error_type}', district='{req.user_district}', desired_type='{desired_type}'")
         rows: List[Dict[str, Any]] = []
 
         # Prefer Supabase
@@ -1201,11 +1229,11 @@ def rank_auto(req: RankRequest):
                 rows = (same or []) + (others or [])
             except Exception as e:
                 error_msg = str(e)
-                print(f"Supabase query failed: {error_msg}")
+                logger.info(f"Supabase query failed: {error_msg}")
                 if "requested path is invalid" in error_msg.lower() or "relation" in error_msg.lower():
-                    print(f"   This usually means the 'shops' table doesn't exist in Supabase.")
-                    print(f"   Please create the table in your Supabase project or check table name.")
-                print(f"   Falling back to CSV data...")
+                    logger.info(f"   This usually means the 'shops' table doesn't exist in Supabase.")
+                    logger.info(f"   Please create the table in your Supabase project or check table name.")
+                logger.info(f"   Falling back to CSV data...")
                 rows = []
 
         # CSV fallback
@@ -1239,7 +1267,7 @@ def rank_auto(req: RankRequest):
             rows = combined.head(req.top_k).to_dict(orient="records")
 
         # Log candidate count for debugging
-        print(f"[RANK_AUTO] candidates_count={len(rows)}")
+        logger.info(f"[RANK_AUTO] candidates_count={len(rows)}")
 
         if not rows:
             # Return empty response with appropriate structure
@@ -1509,7 +1537,7 @@ def get_shop_details(shop_id: str):
             raise HTTPException(status_code=400, detail="shop_id parameter is required")
         
         shop_id = shop_id.strip()  # Clean the shop_id
-        print(f"Fetching shop details for shop_id: '{shop_id}'")
+        logger.info(f"Fetching shop details for shop_id: '{shop_id}'")
         
         shop_data: Optional[Dict[str, Any]] = None
         products: List[Dict[str, Any]] = []
@@ -1521,62 +1549,62 @@ def get_shop_details(shop_id: str):
                 sres = supabase.table("shops").select("*").eq("shop_id", shop_id).execute()
                 if sres.data:
                     shop_data = sres.data[0]
-                    print(f"Found shop in Supabase: {shop_data.get('shop_name', 'Unknown')}")
+                    logger.info(f"Found shop in Supabase: {shop_data.get('shop_name', 'Unknown')}")
                 else:
-                    print(f"Shop '{shop_id}' not found in Supabase")
+                    logger.info(f"Shop '{shop_id}' not found in Supabase")
                     
                 try:
                     pres = supabase.table("products").select("*").eq("shop_id", shop_id).execute()
                     products = pres.data or []
                     if products:
-                        print(f"Found {len(products)} products in Supabase")
+                        logger.info(f"Found {len(products)} products in Supabase")
                 except Exception as e:
-                    print(f"Failed to fetch products from Supabase: {e}")
+                    logger.info(f"Failed to fetch products from Supabase: {e}")
                     
                 try:
                     fres = supabase.table("feedback").select("*").eq("shop_id", shop_id).order("date", desc=True).limit(10).execute()
                     feedback = fres.data or []
                     if feedback:
-                        print(f"Found {len(feedback)} feedback entries in Supabase")
+                        logger.info(f"Found {len(feedback)} feedback entries in Supabase")
                 except Exception as e:
-                    print(f"Failed to fetch feedback from Supabase: {e}")
+                    logger.info(f"Failed to fetch feedback from Supabase: {e}")
             except Exception as e:
                 error_msg = str(e)
-                print(f"Supabase shop_details failed: {error_msg}")
+                logger.info(f"Supabase shop_details failed: {error_msg}")
                 if "requested path is invalid" in error_msg.lower() or "relation" in error_msg.lower():
-                    print(f"   This usually means the 'shops' table doesn't exist in Supabase.")
-                    print(f"   Please create the table in your Supabase project or check table name.")
+                    logger.info(f"   This usually means the 'shops' table doesn't exist in Supabase.")
+                    logger.info(f"   Please create the table in your Supabase project or check table name.")
                 import traceback
                 traceback.print_exc()
 
         # CSV fallback
         if not shop_data and shops_df is not None and not shops_df.empty:
-            print(f"Searching CSV for shop_id: '{shop_id}'")
+            logger.info(f"Searching CSV for shop_id: '{shop_id}'")
             try:
                 if 'shop_id' in shops_df.columns:
-                    print(f"   Available shop_ids in CSV (first 5): {list(shops_df['shop_id'].head(5))}")
+                    logger.info(f"   Available shop_ids in CSV (first 5): {list(shops_df['shop_id'].head(5))}")
                     
                     # Try exact match first
                     row = shops_df[shops_df["shop_id"].astype(str).str.strip() == shop_id]
                     if not row.empty:
                         shop_data = row.iloc[0].to_dict()
-                        print(f"Found shop in CSV: {shop_data.get('shop_name', 'Unknown')}")
+                        logger.info(f"Found shop in CSV: {shop_data.get('shop_name', 'Unknown')}")
                     else:
                         # Try case-insensitive match
                         row = shops_df[shops_df["shop_id"].astype(str).str.strip().str.lower() == shop_id.lower()]
                         if not row.empty:
                             shop_data = row.iloc[0].to_dict()
-                            print(f"Found shop in CSV (case-insensitive): {shop_data.get('shop_name', 'Unknown')}")
+                            logger.info(f"Found shop in CSV (case-insensitive): {shop_data.get('shop_name', 'Unknown')}")
                 else:
-                    print(f"CSV loaded but 'shop_id' column not found. Available columns: {list(shops_df.columns)}")
+                    logger.info(f"CSV loaded but 'shop_id' column not found. Available columns: {list(shops_df.columns)}")
             except Exception as csv_error:
-                print(f"Error searching CSV: {csv_error}")
+                logger.info(f"Error searching CSV: {csv_error}")
                 import traceback
                 traceback.print_exc()
 
         if not shop_data:
             error_msg = f"Shop with ID '{shop_id}' not found in database"
-            print(f"{error_msg}")
+            logger.info(f"{error_msg}")
             raise HTTPException(status_code=404, detail=error_msg)
 
         # Load products from CSV if not already loaded
@@ -1585,9 +1613,9 @@ def get_shop_details(shop_id: str):
                 pdf = pd.read_csv(PRODUCTS_CSV, dtype=str, keep_default_na=False)
                 products = pdf[pdf["shop_id"].astype(str).str.strip() == shop_id].to_dict(orient="records")
                 if products:
-                    print(f"Found {len(products)} products in CSV")
+                    logger.info(f"Found {len(products)} products in CSV")
             except Exception as e:
-                print(f"Failed to load products from CSV: {e}")
+                logger.info(f"Failed to load products from CSV: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -1611,7 +1639,7 @@ def get_shop_details(shop_id: str):
                     cleaned_shop_data[key] = value
             shop_data = cleaned_shop_data
 
-        print(f"Returning shop details for: {shop_data.get('shop_name', 'Unknown') if shop_data else 'Unknown'}")
+        logger.info(f"Returning shop details for: {shop_data.get('shop_name', 'Unknown') if shop_data else 'Unknown'}")
         return {"shop": shop_data, "products": products, "feedback": feedback}
 
     except HTTPException:
@@ -1619,8 +1647,8 @@ def get_shop_details(shop_id: str):
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
-        print(f"Error in get_shop_details: {e}")
-        print(f"Traceback:\n{error_trace}")
+        logger.info(f"Error in get_shop_details: {e}")
+        logger.info(f"Traceback:\n{error_trace}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch shop details: {str(e)}")
 
 # ─────────────────────────────────────────────────────────
@@ -1648,7 +1676,7 @@ def get_product_details(product_id: str):
                         if sres.data:
                             shop_data = sres.data[0]
             except Exception as e:
-                print(f"Supabase product_details failed: {e}")
+                logger.info(f"Supabase product_details failed: {e}")
 
         # CSV fallback
         if not product_data and PRODUCTS_CSV.exists():
@@ -1683,9 +1711,9 @@ def get_product_details(product_id: str):
                                     else:
                                         shop_data[k] = v
                         except Exception as shop_error:
-                            print(f"Error fetching shop data for product: {shop_error}")
+                            logger.info(f"Error fetching shop data for product: {shop_error}")
             except Exception as e:
-                print(f"CSV product_details failed: {e}")
+                logger.info(f"CSV product_details failed: {e}")
                 import traceback
                 traceback.print_exc()
 
@@ -1731,7 +1759,7 @@ def get_product_details(product_id: str):
                     cleaned_shop_data[key] = value
             shop_data = cleaned_shop_data
 
-        print(f"Returning product details for: {product_data.get('product_id', 'Unknown') if product_data else 'Unknown'}")
+        logger.info(f"Returning product details for: {product_data.get('product_id', 'Unknown') if product_data else 'Unknown'}")
         return {"product": product_data, "shop": shop_data}
 
     except HTTPException:
@@ -1739,8 +1767,8 @@ def get_product_details(product_id: str):
     except Exception as e:
         import traceback
         error_trace = traceback.format_exc()
-        print(f"Error in get_product_details: {e}")
-        print(f"Traceback:\n{error_trace}")
+        logger.info(f"Error in get_product_details: {e}")
+        logger.info(f"Traceback:\n{error_trace}")
         raise HTTPException(status_code=500, detail=f"Failed to fetch product details: {str(e)}")
 
 # ─────────────────────────────────────────────────────────
@@ -1763,7 +1791,7 @@ def rank_products_auto(q: ProductQuery):
             if q.query:
                 corrected_query, corrections = check_and_correct(q.query)
                 if corrections:
-                    print(f"[SPELL_CHECK] Product query corrected: {corrections}")
+                    logger.info(f"[SPELL_CHECK] Product query corrected: {corrections}")
                     q.query = corrected_query
             if q.error_type:
                 corrected_error_type, _ = check_and_correct(q.error_type)
@@ -1774,7 +1802,7 @@ def rank_products_auto(q: ProductQuery):
                 if corrected_category != q.product_category:
                     q.product_category = corrected_category
         except Exception as e:
-            print(f"[WARNING] Spell checker failed: {e}")
+            logger.info(f"[WARNING] Spell checker failed: {e}")
             pass  # Continue without spell checking
         
         search_text = (q.query or q.error_type or q.product_category or "").lower()
@@ -1805,7 +1833,7 @@ def rank_products_auto(q: ProductQuery):
             
             if detected_category and detection_confidence >= 0.6:
                 product_category = detected_category
-                print(f"[PRODUCT NLP] Mapped '{search_text}' -> '{detected_category}' (source={detection_source}, conf={detection_confidence:.2f})")
+                logger.info(f"[PRODUCT NLP] Mapped '{search_text}' -> '{detected_category}' (source={detection_source}, conf={detection_confidence:.2f})")
         # STEP 3: Fallback to error_type mapping
         if not product_category and q.error_type:
             product_category = error_to_category.get(q.error_type, "")
@@ -1835,18 +1863,18 @@ def rank_products_auto(q: ProductQuery):
                             "match_reason": f"Available at {shop.get('shop_name', 'Unknown Shop')}",
                         })
             except Exception as e:
-                print(f"Supabase products fetch failed: {e}")
+                logger.info(f"Supabase products fetch failed: {e}")
 
         # CSV supplement/fallback
         if (not results) and PRODUCTS_CSV.exists():
             try:
                 pdf = pd.read_csv(PRODUCTS_CSV, dtype=str, keep_default_na=False).replace({"": None})
-                print(f"Loaded products CSV: {len(pdf)} rows, columns: {list(pdf.columns)}")
+                logger.info(f"Loaded products CSV: {len(pdf)} rows, columns: {list(pdf.columns)}")
                 
                 # If products CSV doesn't contain shop meta, try join with shops_df
                 if "shop_type" in pdf.columns:
                     pdf = pdf[pdf["shop_type"].str.lower() == "product_shop"]
-                    print(f"   After shop_type filter: {len(pdf)} rows")
+                    logger.info(f"   After shop_type filter: {len(pdf)} rows")
                 elif shops_df is not None and not shops_df.empty:
                     # Ensure shop_id exists in both
                     if "shop_id" in pdf.columns:
@@ -1856,12 +1884,12 @@ def rank_products_auto(q: ProductQuery):
                             how="left"
                         )
                         pdf = pdf[pdf["shop_type"].str.lower() == "product_shop"]
-                        print(f"   After merge and shop_type filter: {len(pdf)} rows")
+                        logger.info(f"   After merge and shop_type filter: {len(pdf)} rows")
                     else:
-                        print(f"   No shop_id column in products CSV")
+                        logger.info(f"   No shop_id column in products CSV")
                 else:
                     # If no shops_df, continue without filtering by shop_type
-                    print(f"   No shops_df available, using all products")
+                    logger.info(f"   No shops_df available, using all products")
 
                 # Filter by product category (if provided)
                 if product_category and "category" in pdf.columns:
@@ -1896,7 +1924,7 @@ def rank_products_auto(q: ProductQuery):
 
                 pdf = pdf.drop_duplicates(subset=["product_id", "shop_id"], keep="first")
                 
-                print(f"   After all filters: {len(pdf)} products found")
+                logger.info(f"   After all filters: {len(pdf)} products found")
 
                 for _, r in pdf.iterrows():
                     price_val = 0.0
@@ -1923,16 +1951,16 @@ def rank_products_auto(q: ProductQuery):
                         "match_reason": f"Available at {(r.get('shop_name') or 'Unknown Shop')}",
                     })
             except Exception as e:
-                print(f"CSV products load failed: {e}")
+                logger.info(f"CSV products load failed: {e}")
                 import traceback
                 traceback.print_exc()
 
         # Debug logging
-        print(f"Product search results: category='{product_category}', search_text='{search_text}', district='{user_district}', found={len(results)} products")
+        logger.info(f"Product search results: category='{product_category}', search_text='{search_text}', district='{user_district}', found={len(results)} products")
         
         if not results:
-            print(f"No products found. Check if CSV exists at: {PRODUCTS_CSV}")
-            print(f"   CSV exists: {PRODUCTS_CSV.exists()}")
+            logger.info(f"No products found. Check if CSV exists at: {PRODUCTS_CSV}")
+            logger.info(f"   CSV exists: {PRODUCTS_CSV.exists()}")
             return []
 
         # Budget-aware ordering
@@ -2317,7 +2345,7 @@ def feedback(feedback: FeedbackRequest):
                 if res.data:
                     return {"message": "Feedback submitted", "data": res.data}
             except Exception as e:
-                print(f"Failed to write feedback to Supabase: {e}")
+                logger.info(f"Failed to write feedback to Supabase: {e}")
 
         # Fallback: acknowledge only (or you could append to FEEDBACK_CSV)
         return {"message": "Feedback received (local)", "data": payload}
@@ -2348,7 +2376,7 @@ def explain_shop_detailed(
             if res.data and len(res.data) > 0:
                 shop_row = res.data[0]
         except Exception as e:
-            print(f"Failed to fetch shop from Supabase: {e}")
+            logger.info(f"Failed to fetch shop from Supabase: {e}")
     
     # Fallback to CSV
     if shop_row is None and shops_df is not None:
@@ -2570,7 +2598,7 @@ def nlp_predict(model: Optional[Any], text: str) -> Tuple[Optional[str], float, 
         return None, 0.0, []
         
     except Exception as e:
-        print(f"NLP prediction error: {e}")
+        logger.info(f"NLP prediction error: {e}")
         import traceback
         traceback.print_exc()
         return None, 0.0, []
@@ -2751,7 +2779,7 @@ def detect_error_type_rules(text: str) -> Tuple[Optional[str], float, List[Dict[
         if corrected_text != text:
             # Use corrected text for better matching
             text = corrected_text
-            print(f"[SPELL_CHECK] Corrected: '{text}' -> '{corrected_text}'")
+            logger.info(f"[SPELL_CHECK] Corrected: '{text}' -> '{corrected_text}'")
     except Exception as e:
         # Continue without spell checking if it fails
         pass
@@ -3019,7 +3047,7 @@ def detect_error_type_hybrid(text: str) -> Dict[str, Any]:
         # ML function not available, skip ML
         pass
     except Exception as e:
-        print(f"[NLP ERROR] detect_error_type_ml failed: {e}")
+        logger.info(f"[NLP ERROR] detect_error_type_ml failed: {e}")
     
     # STEP 6: Use rule result if available (even if lower confidence)
     if rule_label:
@@ -3134,10 +3162,10 @@ def detect_error_type_endpoint(req: DetectErrorRequest):
             from spell_checker import check_and_correct
             corrected_text, corrections = check_and_correct(req.text)
             if corrections:
-                print(f"[SPELL_CHECK] Error detection: corrected {corrections}")
+                logger.info(f"[SPELL_CHECK] Error detection: corrected {corrections}")
                 req.text = corrected_text
         except Exception as e:
-            print(f"[WARNING] Spell checker failed: {e}")
+            logger.info(f"[WARNING] Spell checker failed: {e}")
             pass  # Continue without spell checking
         
         from similar_errors import get_similar_errors, get_error_explanation
@@ -3311,7 +3339,7 @@ def product_need_recommend(req: ProductNeedRequest):
     except ImportError:
         pass  # Spell checker optional
     except Exception as e:
-        print(f"[WARNING] Spell checker failed: {e}")
+        logger.info(f"[WARNING] Spell checker failed: {e}")
         pass  # Continue without spell checking
 
     # Constants
@@ -3351,7 +3379,7 @@ def product_need_recommend(req: ProductNeedRequest):
                     ProductNeedAlternative(label=related_comp, confidence=final_conf * 0.8)
                 )
             
-            print(f"[PRODUCT_NEED] Rule matched: '{final_label}' (conf={final_conf:.2f})")
+            logger.info(f"[PRODUCT_NEED] Rule matched: '{final_label}' (conf={final_conf:.2f})")
     
     # ============================================================================
     # STAGE 2: Hierarchical ML (if rule didn't match)
@@ -3410,11 +3438,11 @@ def product_need_recommend(req: ProductNeedRequest):
                             for cat, comps in all_grouped.items()
                         ]
                     except Exception as e:
-                        print(f"[WARNING] Failed to group by category: {e}")
+                        logger.info(f"[WARNING] Failed to group by category: {e}")
                 
-                print(f"[PRODUCT_NEED] Hierarchical ML: '{final_label}' (conf={final_conf:.2f})")
+                logger.info(f"[PRODUCT_NEED] Hierarchical ML: '{final_label}' (conf={final_conf:.2f})")
         except Exception as e:
-            print(f"[ERROR] Hierarchical prediction failed: {e}")
+            logger.info(f"[ERROR] Hierarchical prediction failed: {e}")
             import traceback
             traceback.print_exc()
     
@@ -3443,9 +3471,9 @@ def product_need_recommend(req: ProductNeedRequest):
                     for label, conf in top5[:5]
                 ]
                 
-                print(f"[PRODUCT_NEED] Flat ML fallback: '{final_label}' (conf={final_conf:.2f})")
+                logger.info(f"[PRODUCT_NEED] Flat ML fallback: '{final_label}' (conf={final_conf:.2f})")
         except Exception as e:
-            print(f"[ERROR] Flat ML prediction failed: {e}")
+            logger.info(f"[ERROR] Flat ML prediction failed: {e}")
     
     # ============================================================================
     # Handle no prediction case or very low confidence (unclear issue)
@@ -3520,7 +3548,7 @@ def product_need_recommend(req: ProductNeedRequest):
         except ImportError:
             fixing_tips = []
         except Exception as e:
-            print(f"[WARNING] Failed to get fixing tips: {e}")
+            logger.info(f"[WARNING] Failed to get fixing tips: {e}")
             fixing_tips = []
     
     # Generate explanation if not available
@@ -3543,7 +3571,7 @@ def product_need_recommend(req: ProductNeedRequest):
                 "Please review the alternative options below and choose what best matches your situation."
             )
     
-    print(
+    logger.info(
         f"[PRODUCT_NEED] text='{text[:50]}...' -> '{final_label}' "
         f"(conf={final_conf:.2f}, source={source}, ask_feedback={ask_feedback})"
     )
@@ -3634,7 +3662,7 @@ def full_recommendation(req: FullRecommendationRequest):
             top_shops = shops_response.recommendations[:req.top_k_shops] if shops_response.recommendations else []
         except HTTPException as e:
             # If rank_auto fails, return empty shops but continue with products and tools
-            print(f"rank_auto failed: {e.detail}")
+            logger.info(f"rank_auto failed: {e.detail}")
             top_shops = []
         
         # Get products using rank_products_auto
@@ -3647,7 +3675,7 @@ def full_recommendation(req: FullRecommendationRequest):
             products_list = rank_products_auto(product_query)
             top_products = products_list[:req.top_k_products] if products_list else []
         except Exception as e:
-            print(f"rank_products_auto failed: {str(e)}")
+            logger.info(f"rank_products_auto failed: {str(e)}")
             top_products = []
         
         # Get tools using tools_recommend
@@ -3659,7 +3687,7 @@ def full_recommendation(req: FullRecommendationRequest):
             else:
                 top_tools = tools_list[:req.top_k_tools] if isinstance(tools_list, list) else []
         except Exception as e:
-            print(f"tools_recommend failed: {str(e)}")
+            logger.info(f"tools_recommend failed: {str(e)}")
             top_tools = []
         
         # Generate summary
@@ -4003,7 +4031,7 @@ def log_product_need_error(
                 note,
             ])
     except Exception as e:
-        print(f"Failed to log product need error: {e}")
+        logger.info(f"Failed to log product need error: {e}")
 
 # ─────────────────────────────────────────────────────────
 # Product Need Prediction Helpers
@@ -4028,11 +4056,11 @@ def predict_product_need(text: str) -> Tuple[Optional[str], float, List[Tuple[st
         best_label, best_conf = top3[0]
         
         # Debug: Log prediction details (only in verbose mode)
-        # print(f"[DEBUG] ML prediction: '{best_label}' (conf={best_conf:.3f}), top3={top3}")
+        # logger.info(f"[DEBUG] ML prediction: '{best_label}' (conf={best_conf:.3f}), top3={top3}")
         
         return best_label, best_conf, top3
     except Exception as e:
-        print(f"[ERROR] Failed to predict product need: {e}")
+        logger.info(f"[ERROR] Failed to predict product need: {e}")
         return None, 0.0, []
 
 def apply_product_need_rules(
