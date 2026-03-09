@@ -2323,38 +2323,38 @@ export default function Home() {
             {activeTab === 'repairs' && (errorDetection || detectionLoading || (searchQuery.trim().length > 3 && !errorDetection)) && (
               <div className="mt-4 animate-in slide-in-from-top-2 duration-300">
                 {detectionLoading ? (
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-400 rounded-lg p-5 shadow-lg">
+                  <div className="bg-slate-950/80 border border-cyan-400/35 rounded-lg p-5 shadow-lg shadow-cyan-900/30 backdrop-blur-md">
                     <div className="flex items-center gap-3">
                       <div className="relative">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                        <div className="absolute inset-0 animate-ping rounded-full h-6 w-6 border border-blue-400 opacity-75"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-400"></div>
+                        <div className="absolute inset-0 animate-ping rounded-full h-6 w-6 border border-cyan-300/80 opacity-75"></div>
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-blue-900">🔍 Analyzing your issue...</p>
-                        <p className="text-xs text-blue-700 mt-1">Detecting error type and matching repair shops</p>
+                        <p className="text-sm font-semibold text-cyan-200">🔍 Analyzing your issue...</p>
+                        <p className="text-xs text-cyan-100/80 mt-1">Detecting error type and matching repair shops</p>
                       </div>
                     </div>
                   </div>
                 ) : errorDetection && errorDetection.label ? (
                   <div className={`rounded-xl p-5 shadow-lg border-2 transition-all duration-300 ${
                     errorDetection.confidence >= 0.8 
-                      ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-400' 
+                      ? 'bg-emerald-500/10 border-emerald-400/60' 
                       : errorDetection.confidence >= 0.6
-                      ? 'bg-gradient-to-r from-yellow-50 to-amber-50 border-yellow-400'
-                      : 'bg-gradient-to-r from-orange-50 to-red-50 border-orange-400'
+                      ? 'bg-amber-500/10 border-amber-400/60'
+                      : 'bg-orange-500/10 border-orange-400/60'
                   }`}>
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-3">
                           <div className={`p-2.5 rounded-lg shadow-md ${
-                            errorDetection.confidence >= 0.8 ? 'bg-green-100' :
-                            errorDetection.confidence >= 0.6 ? 'bg-yellow-100' : 'bg-orange-100'
+                            errorDetection.confidence >= 0.8 ? 'bg-emerald-500/20' :
+                            errorDetection.confidence >= 0.6 ? 'bg-amber-500/20' : 'bg-orange-500/20'
                           }`}>
                             <span className="text-3xl">🎯</span>
                           </div>
                           <div className="flex-1">
-                            <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">Detected Issue</p>
-                            <p className="text-2xl font-bold text-gray-900">{errorDetection.label}</p>
+                            <p className="text-xs font-semibold text-gray-300 uppercase tracking-wide mb-1">Detected Issue</p>
+                            <p className="text-2xl font-bold text-white">{errorDetection.label}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3 mt-3">
@@ -2363,7 +2363,7 @@ export default function Home() {
                               errorDetection.confidence >= 0.8 ? 'bg-green-500' :
                               errorDetection.confidence >= 0.6 ? 'bg-yellow-500' : 'bg-orange-500'
                             } animate-pulse`}></div>
-                            <p className="text-sm font-bold text-gray-800">
+                            <p className="text-sm font-bold text-gray-100">
                               {Math.round(errorDetection.confidence * 100)}% confidence
                             </p>
                           </div>
@@ -2371,36 +2371,36 @@ export default function Home() {
                       </div>
                       {confirmedErrorType && confirmedErrorType.errorType === errorDetection.label && (
                         <div className="flex flex-col items-center gap-1">
-                          <span className="px-4 py-2 bg-green-500 text-white rounded-lg text-sm font-bold shadow-md animate-pulse">
+                          <span className="px-4 py-2 bg-emerald-500 text-white rounded-lg text-sm font-bold shadow-md animate-pulse">
                             ✓ Confirmed
                           </span>
-                          <span className="text-xs text-green-700 font-medium">Ready to search</span>
+                          <span className="text-xs text-emerald-200 font-medium">Ready to search</span>
                         </div>
                       )}
                     </div>
                         
                         {/* Multiple Error Types */}
                         {errorDetection.multiple_types && errorDetection.multiple_types.length > 0 && (
-                          <div className="mb-4 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg">
-                            <p className="text-sm font-semibold text-orange-900 mb-2">
+                          <div className="mb-4 p-3 bg-orange-500/10 border border-orange-400/50 rounded-lg">
+                            <p className="text-sm font-semibold text-orange-200 mb-2">
                               ⚠️ Multiple Issues Detected:
                             </p>
                             <div className="space-y-2">
                               {errorDetection.multiple_types.map((multiType, idx) => (
                                 <div
                                   key={idx}
-                                  className="flex items-center justify-between p-2 bg-white border border-orange-200 rounded"
+                                  className="flex items-center justify-between p-2 bg-slate-900/70 border border-orange-400/30 rounded"
                                 >
-                                  <span className="text-sm font-medium text-gray-800">
+                                  <span className="text-sm font-medium text-gray-100">
                                     {multiType.label}
                                   </span>
-                                  <span className="text-xs text-gray-600">
+                                  <span className="text-xs text-gray-300">
                                     {Math.round(multiType.confidence * 100)}% confidence
                                   </span>
                                 </div>
                               ))}
                             </div>
-                            <p className="text-xs text-orange-800 mt-2">
+                            <p className="text-xs text-orange-100/90 mt-2">
                               Your issue may involve multiple problems. Consider addressing all detected issues.
                             </p>
                           </div>
@@ -2408,16 +2408,16 @@ export default function Home() {
                         
                         {/* Explanation */}
                         {errorDetection.explanation && (
-                          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <p className="text-sm text-gray-700">{errorDetection.explanation}</p>
+                          <div className="mb-4 p-3 bg-cyan-500/10 border border-cyan-400/40 rounded-lg">
+                            <p className="text-sm text-cyan-100">{errorDetection.explanation}</p>
                           </div>
                         )}
                         
                         {/* Similar Issues disabled */}
                         
                         {errorDetection.alternatives && errorDetection.alternatives.length > 0 && errorDetection.confidence < 0.8 && (
-                          <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                            <p className="text-xs font-semibold text-purple-900 mb-2">💡 Other possibilities:</p>
+                          <div className="mb-4 p-3 bg-violet-500/10 border border-violet-400/40 rounded-lg">
+                            <p className="text-xs font-semibold text-violet-200 mb-2">💡 Other possibilities:</p>
                             <div className="flex flex-wrap gap-2">
                               {errorDetection.alternatives.slice(0, 3).map((alt, idx) => (
                                 <button
@@ -2436,9 +2436,9 @@ export default function Home() {
                                     });
                                     toast.success(`✓ Selected: ${alt.label}`, { duration: 2000 });
                                   }}
-                                  className="px-3 py-2 bg-white border-2 border-purple-300 rounded-lg text-xs font-semibold hover:bg-purple-100 hover:border-purple-400 transition-all shadow-sm hover:shadow-md"
+                                  className="px-3 py-2 bg-slate-900/70 border border-violet-300/40 rounded-lg text-xs text-violet-100 font-semibold hover:bg-violet-500/15 hover:border-violet-300/70 transition-all shadow-sm hover:shadow-md"
                                 >
-                                  {alt.label} <span className="text-purple-600">({Math.round(alt.confidence * 100)}%)</span>
+                                  {alt.label} <span className="text-violet-300">({Math.round(alt.confidence * 100)}%)</span>
                                 </button>
                               ))}
                             </div>
@@ -2467,26 +2467,26 @@ export default function Home() {
                               <span className="text-lg">✓</span>
                               <span>Confirm: {errorDetection.label}</span>
                             </button>
-                            <p className="text-xs text-center text-gray-600">
+                            <p className="text-xs text-center text-gray-300">
                               Click to confirm this error type and search for repair shops
                             </p>
                           </div>
                         ) : (
-                          <div className="bg-gradient-to-r from-green-100 to-emerald-100 border-2 border-green-400 rounded-lg px-4 py-3 text-center">
+                          <div className="bg-emerald-500/15 border border-emerald-400/50 rounded-lg px-4 py-3 text-center">
                             <div className="flex items-center justify-center gap-2 mb-1">
-                              <span className="text-green-600 text-xl">✓</span>
-                              <span className="text-sm font-bold text-green-800">{errorDetection.label} Confirmed</span>
+                              <span className="text-emerald-300 text-xl">✓</span>
+                              <span className="text-sm font-bold text-emerald-100">{errorDetection.label} Confirmed</span>
                             </div>
-                            <p className="text-xs text-green-700">Ready to search for repair shops</p>
+                            <p className="text-xs text-emerald-200">Ready to search for repair shops</p>
                           </div>
                         )}
                     </div>
                 ) : (
                   <div>
-                    <p className="text-sm font-semibold text-gray-900 mb-2">Could not detect specific issue</p>
+                    <p className="text-sm font-semibold text-gray-100 mb-2">Could not detect specific issue</p>
                         {errorDetection && errorDetection.alternatives && errorDetection.alternatives.length > 0 ? (
                           <>
-                            <p className="text-xs text-gray-700 mb-2">Did you mean:</p>
+                            <p className="text-xs text-gray-300 mb-2">Did you mean:</p>
                             <div className="flex flex-wrap gap-2">
                               {errorDetection.alternatives.map((alt, idx) => (
                                 <button
@@ -2505,7 +2505,7 @@ export default function Home() {
                                     });
                                     toast.success(`Selected: ${alt.label}`);
                                   }}
-                                  className="px-3 py-1 bg-white border border-gray-300 rounded-md text-xs hover:bg-purple-50 hover:border-purple-300 transition-colors"
+                                  className="px-3 py-1 bg-slate-900/70 border border-white/20 text-gray-100 rounded-md text-xs hover:bg-cyan-500/10 hover:border-cyan-300/60 transition-colors"
                                 >
                                   {alt.label} ({Math.round(alt.confidence * 100)}%)
                                 </button>
@@ -2513,7 +2513,7 @@ export default function Home() {
                             </div>
                           </>
                         ) : (
-                          <p className="text-xs text-gray-600 italic">Please provide more details about your issue</p>
+                          <p className="text-xs text-gray-400 italic">Please provide more details about your issue</p>
                         )}
                   </div>
                 )}
@@ -3097,20 +3097,20 @@ export default function Home() {
 
         {/* ChatGPT-style Analysis Summary */}
         {activeTab === 'repairs' && recommendationSummary && shops.length > 0 && !loading && (
-          <div className="bg-gradient-to-r from-purple-50 via-blue-50 to-indigo-50 border-l-4 border-purple-500 rounded-xl p-6 mb-6 shadow-lg">
+          <div className="bg-slate-950/75 border border-cyan-400/30 rounded-xl p-6 mb-6 shadow-lg shadow-cyan-900/25 backdrop-blur-md">
             <div className="flex items-start gap-4">
               <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
+                <div className="w-12 h-12 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-md">
                   AI
                 </div>
               </div>
               <div className="flex-1">
-                <h3 className="text-xl font-bold text-gray-900 mb-3">Analysis & Recommendations</h3>
+                <h3 className="text-xl font-bold text-cyan-100 mb-3">Analysis & Recommendations</h3>
                 <div className="prose prose-sm max-w-none">
                   {recommendationSummary.split('\n\n').map((paragraph, index) => (
-                    <p key={index} className="text-gray-700 mb-3 last:mb-0 whitespace-pre-line leading-relaxed">
+                    <p key={index} className="text-gray-200 mb-3 last:mb-0 whitespace-pre-line leading-relaxed">
                       {paragraph.split('**').map((part, i) => 
-                        i % 2 === 1 ? <strong key={i} className="text-purple-700 font-semibold">{part}</strong> : part
+                        i % 2 === 1 ? <strong key={i} className="text-cyan-300 font-semibold">{part}</strong> : part
                       )}
                     </p>
                   ))}
