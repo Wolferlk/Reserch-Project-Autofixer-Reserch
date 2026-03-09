@@ -71,35 +71,14 @@ def _fallback_response(context: str, query: str) -> str:
     context_steps = _extract_step_actions(context, limit=5)
     query_l = query.lower()
 
-    intros = [
-        "Resolution plan:",
-        "Follow this sequence:",
-        "Recommended troubleshooting steps:",
-    ]
-
-    step1 = [
-        "Step 1: Open the relevant settings panel and identify the exact feature related to your request.",
-        "Step 1: Navigate to the target tool and confirm you are editing the correct object or document.",
-    ]
-    step2 = [
-        "Step 2: Apply the change gradually and review the preview after each adjustment.",
-        "Step 2: Execute the main action, then validate the output before committing the change.",
-    ]
-    step3 = [
-        "Step 3: If the result is unstable, revert one step and refine with smaller increments.",
-        "Step 3: If quality is poor, tune one parameter at a time and retest.",
-    ]
-    step4 = [
-        "Step 4: Save a final version and keep a backup copy for rollback.",
-        "Step 4: Export the final output and perform a quick final verification.",
-    ]
-
     lines = [
-        random.choice(intros),
-        random.choice(step1),
-        random.choice(step2),
-        random.choice(step3),
-        random.choice(step4),
+        "Software Fix Plan:",
+        "1. Confirm scope: identify the exact software name, version, and full error text.",
+        "2. Prepare safely: save your current work and create a restore point or backup.",
+        "3. Reproduce once: perform the same action and note exactly where it fails.",
+        "4. Apply focused fix: follow only one fix path at a time to avoid side effects.",
+        "5. Validate result: repeat the original action and verify the issue is fully resolved.",
+        "6. Harden setup: update software/plugins and document the final working steps.",
     ]
 
     if ("background" in query_l and "photo" in query_l) or "remove bg" in query_l:
@@ -117,7 +96,7 @@ def _fallback_response(context: str, query: str) -> str:
                 "Step 4: Save in PNG format to preserve alpha transparency.",
             ],
         ]
-        lines = [random.choice(intros)] + random.choice(variants)
+        lines = ["Software Fix Plan:"] + [f"{i+1}. {s[8:] if s.lower().startswith('step ') else s}" for i, s in enumerate(random.choice(variants))]
 
     elif any(k in query_l for k in ["internet", "no connection", "network", "offline"]):
         variants = [
@@ -136,13 +115,19 @@ def _fallback_response(context: str, query: str) -> str:
                 "Step 5: If still failing, reset Chrome settings to defaults and retry.",
             ],
         ]
-        lines = [random.choice(intros)] + random.choice(variants)
+        lines = ["Software Fix Plan:"] + [f"{i+1}. {s[8:] if s.lower().startswith('step ') else s}" for i, s in enumerate(random.choice(variants))]
 
     elif context_steps:
-        lines = [random.choice(intros)]
+        lines = ["Software Fix Plan:"]
         for idx, step in enumerate(context_steps[:5], start=1):
-            lines.append(f"Step {idx}: {step}")
-        lines.append("Step 6: If unresolved, share the exact error text and screenshot for deeper diagnosis.")
+            lines.append(f"{idx}. {step}")
+        lines.append("6. If unresolved, share exact error text and a screenshot for deeper diagnosis.")
+
+    lines.append("")
+    lines.append("Verification checklist:")
+    lines.append("- Restart the software and test the same workflow.")
+    lines.append("- Confirm no new warning/error is introduced.")
+    lines.append("- If shared machine: verify user permissions and network access.")
 
     if selected:
         lines.append("")
@@ -184,7 +169,8 @@ def _load_local_llm():
 def generate_ai_response(context, query):
     prompt = (
         "You are an expert software support assistant. "
-        "Use the provided context, avoid repetition, and return concise numbered steps.\n\n"
+        "Return user-friendly, practical, detailed troubleshooting steps. "
+        "Include verification and safety guidance. Avoid repetition.\n\n"
         f"Context:\n{context[:1500]}\n\n"
         f"Question:\n{query}\n\n"
         "Answer:"

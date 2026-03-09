@@ -1,4 +1,7 @@
-from response_generator.llm_generator import generate_ai_response
+try:
+    from response_generator.llm_generator import generate_ai_response
+except ModuleNotFoundError:
+    from .llm_generator import generate_ai_response
 import re
 
 
@@ -52,6 +55,7 @@ def generate_detailed_response(query, predicted_type, results_df):
         )
 
     issue_type = str(predicted_type).replace("_", " ").title()
+    intent_hint = "Tutorial guidance" if str(predicted_type) == "how_to" else "Troubleshooting guidance"
     software_scope = "Mixed"
     if "software" in results_df.columns:
         softwares = results_df["software"].dropna().astype(str).unique().tolist()
@@ -61,11 +65,12 @@ def generate_detailed_response(query, predicted_type, results_df):
             software_scope = ", ".join(sorted(softwares[:3]))
 
     final_response = "\n"
-    final_response += "=" * 50 + "\n"
+    final_response += "=" * 58 + "\n"
     final_response += f"Software Scope: {software_scope}\n"
     final_response += f"Detected Issue Type: {issue_type}\n"
-    final_response += "=" * 50 + "\n\n"
+    final_response += f"Response Mode: {intent_hint}\n"
+    final_response += "=" * 58 + "\n\n"
     final_response += ai_answer
-    final_response += "\n\nEnd of response.\n"
+    final_response += "\n\nTip: If this does not solve your issue, ask again with exact error text and app version.\n"
 
     return final_response
