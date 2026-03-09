@@ -2,6 +2,7 @@ from datetime import datetime
 from pathlib import Path
 import json
 import re
+from typing import Optional
 
 import torch
 from transformers import T5ForConditionalGeneration, T5Tokenizer
@@ -60,7 +61,15 @@ def _normalize_steps(text: str) -> str:
     return "\n".join(numbered)
 
 
-def generate_fix(text: str, max_length: int = 220, num_beams: int = 5) -> str:
+def generate_fix(
+    text: str,
+    max_length: int = 220,
+    num_beams: int = 1,
+    temperature: float = 0.85,
+    top_p: float = 0.92,
+    top_k: int = 50,
+    variation_seed: Optional[int] = None,
+) -> str:
     prompt = build_prompt(text)
 
     inputs = tokenizer(
@@ -70,12 +79,21 @@ def generate_fix(text: str, max_length: int = 220, num_beams: int = 5) -> str:
         max_length=192,
     ).to(device)
 
+    if variation_seed is not None:
+        torch.manual_seed(variation_seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(variation_seed)
+
     with torch.no_grad():
         outputs = model.generate(
             **inputs,
             max_length=max_length,
             min_length=48,
-            num_beams=num_beams,
+            do_sample=True,
+            temperature=temperature,
+            top_p=top_p,
+            top_k=top_k,
+            num_beams=max(1, num_beams),
             repetition_penalty=1.4,
             no_repeat_ngram_size=3,
         )

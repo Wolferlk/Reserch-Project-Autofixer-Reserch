@@ -37,9 +37,9 @@ export default function CompareShopsModal({ shops, onClose }: CompareShopsModalP
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-slate-950/90 border border-white/15 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-xl text-gray-100">
+      <div className="bg-slate-950/90 border border-cyan-400/25 rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto shadow-xl text-gray-100">
         {/* Header */}
-        <div className="sticky top-0 bg-slate-950/95 border-b border-white/10 px-6 py-4 flex justify-between items-center">
+        <div className="sticky top-0 bg-slate-950/95 border-b border-cyan-400/20 px-6 py-4 flex justify-between items-center">
           <h2 className="text-2xl font-bold text-white">Compare Shops</h2>
           <button
             onClick={onClose}

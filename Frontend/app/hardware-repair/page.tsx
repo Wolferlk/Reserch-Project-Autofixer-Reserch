@@ -79,6 +79,13 @@ const PRODUCT_TYPES = {
   'Monitor': ['monitor', 'display', 'screen', '4k', '144hz']
 };
 
+const HARDWARE_AI_STEPS = [
+  'Reading your issue context',
+  'Mapping symptoms to hardware signals',
+  'Evaluating compatible upgrade paths',
+  'Scoring best-fit component options'
+];
+
 
 export default function Home() {
   // ============================================================================
@@ -128,6 +135,9 @@ export default function Home() {
   const [hardwareRecoError, setHardwareRecoError] = useState<string | null>(null);
   const [typedExtraExplanation, setTypedExtraExplanation] = useState<string>('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
+  const [hardwareAiStep, setHardwareAiStep] = useState(0);
+  const [hardwareAiElapsedMs, setHardwareAiElapsedMs] = useState(0);
+  const [hardwareAiEtaMs, setHardwareAiEtaMs] = useState(0);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Speech recognition
@@ -592,13 +602,16 @@ export default function Home() {
       setIsTypingComplete(false);
       
       let currentIndex = 0;
-      const typingSpeed = 30; // milliseconds per character
 
       const typeNextChar = () => {
         if (currentIndex < fullText.length) {
           setTypedExtraExplanation(fullText.substring(0, currentIndex + 1));
+          const currentChar = fullText[currentIndex];
           currentIndex++;
-          typingTimeoutRef.current = setTimeout(typeNextChar, typingSpeed);
+          // Variable typing cadence creates a more realistic AI-generated output effect.
+          const baseDelay = 18 + Math.floor(Math.random() * 25);
+          const punctuationPause = /[.,!?;:]/.test(currentChar) ? 95 : 0;
+          typingTimeoutRef.current = setTimeout(typeNextChar, baseDelay + punctuationPause);
         } else {
           // Typing is complete
           setIsTypingComplete(true);
@@ -618,6 +631,39 @@ export default function Home() {
       setIsTypingComplete(false);
     }
   }, [hardwareReco?.extra_explanation, hardwareRecoLoading]);
+
+  // Simulated AI pipeline timing for hardware recommendation loading.
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+
+    if (hardwareRecoLoading) {
+      const randomEtaMs = 7000 + Math.floor(Math.random() * 9000);
+      const startedAt = Date.now();
+      setHardwareAiEtaMs(randomEtaMs);
+      setHardwareAiElapsedMs(0);
+      setHardwareAiStep(0);
+
+      intervalId = setInterval(() => {
+        const elapsed = Date.now() - startedAt;
+        const progress = Math.min(elapsed / randomEtaMs, 0.98);
+        const progressStep = Math.floor(progress * HARDWARE_AI_STEPS.length);
+        const jitter = Math.random() > 0.7 ? 1 : 0;
+        const nextStep = Math.min(progressStep + jitter, HARDWARE_AI_STEPS.length - 1);
+        setHardwareAiElapsedMs(elapsed);
+        setHardwareAiStep(prev => Math.max(prev, nextStep));
+      }, 240);
+    } else {
+      setHardwareAiStep(0);
+      setHardwareAiElapsedMs(0);
+      setHardwareAiEtaMs(0);
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [hardwareRecoLoading]);
 
   // Auto-search when error detected with high confidence and district selected
   useEffect(() => {
@@ -2748,21 +2794,21 @@ export default function Home() {
         {/* Hardware Recommender Section */}
         {activeTab === 'hardware' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-xl border-2 border-purple-200 p-6">
+            <div className="bg-slate-950/70 rounded-xl shadow-xl border border-white/15 p-6 backdrop-blur-md">
               {/* Section Header */}
-              <div className="mb-6 pb-4 border-b-2 border-purple-200">
+              <div className="mb-6 pb-4 border-b border-white/15">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">⚙️</span>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Hardware Recommender</h2>
-                    <p className="text-sm text-gray-600">Get personalized hardware upgrade recommendations</p>
+                    <h2 className="text-2xl font-bold text-white">Hardware Recommender</h2>
+                    <p className="text-sm text-gray-300">Get personalized hardware upgrade recommendations</p>
                   </div>
                 </div>
               </div>
 
               {/* Search Bar */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   Describe your PC problem or need
                 </label>
                 <div className="relative">
@@ -2791,7 +2837,7 @@ export default function Home() {
                     }}
                     placeholder="e.g., 'I want to speed up my pc', 'low fps when gaming', 'wifi keeps disconnecting'"
                     rows={3}
-                    className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-3 py-2 pr-20 border border-white/20 bg-black/30 text-gray-100 rounded-md shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
                   />
                   
                   {speechSupported && (
@@ -2802,7 +2848,7 @@ export default function Home() {
                         className={`relative px-4 py-2 rounded-lg text-sm font-medium transition-all duration-300 z-10 ${
                           isListening 
                             ? 'bg-red-500 text-white hover:bg-red-600 shadow-lg shadow-red-500/50' 
-                            : 'bg-purple-500 text-white hover:bg-purple-600 shadow-md hover:shadow-lg'
+                            : 'bg-cyan-500 text-white hover:bg-cyan-600 shadow-md hover:shadow-lg'
                         } transform hover:scale-105 active:scale-95`}
                       >
                         {isListening && (
@@ -2838,42 +2884,80 @@ export default function Home() {
               <button
                 onClick={handleSearch}
                 disabled={loading || !searchQuery.trim()}
-                className="w-full bg-gradient-to-r from-purple-600 to-purple-700 text-white py-3 px-4 rounded-md hover:from-purple-700 hover:to-purple-800 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold shadow-md hover:shadow-lg"
+                className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-3 px-4 rounded-md hover:from-cyan-400 hover:to-blue-500 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold shadow-md hover:shadow-lg"
               >
                 {loading ? 'Analyzing...' : 'Get Hardware Recommendation'}
               </button>
             </div>
 
             {hardwareRecoLoading && (
-              <div className="flex flex-col items-center justify-center py-24 bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-50 rounded-xl shadow-xl border-2 border-purple-200">
-                <div className="relative mb-8">
-                  {/* Outer spinning ring */}
-                  <div className="w-24 h-24 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-                  {/* Middle pulsing ring */}
-                  <div className="absolute inset-2 w-20 h-20 border-4 border-blue-200 border-r-blue-500 rounded-full animate-spin" style={{ animationDirection: 'reverse', animationDuration: '1.5s' }}></div>
-                  {/* Inner icon */}
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
-                      <span className="text-2xl">🔧</span>
+              <div className="py-10 px-6 bg-slate-950/75 rounded-xl shadow-xl border border-cyan-400/25 backdrop-blur-md">
+                <div className="flex items-center justify-between gap-4 mb-6 flex-wrap">
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-10 w-10 rounded-full bg-cyan-500/15 border border-cyan-400/35 flex items-center justify-center">
+                      <span className="text-lg">🤖</span>
+                      <span className="absolute inset-0 rounded-full border border-cyan-300/20 animate-ping"></span>
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold text-white">AI is generating your hardware fix plan</p>
+                      <p className="text-xs text-gray-300">Live inference trace</p>
                     </div>
                   </div>
-                </div>
-                <div className="text-center space-y-2">
-                  <p className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-                    Analyzing your PC needs...
-                  </p>
-                  <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
-                    <span className="inline-block w-2 h-2 bg-purple-600 rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                    <span className="inline-block w-2 h-2 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="inline-block w-2 h-2 bg-indigo-600 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                  <div className="text-xs text-gray-300">
+                    <span className="text-cyan-300 font-medium">{(hardwareAiElapsedMs / 1000).toFixed(1)}s</span>
+                    {' / '}
+                    ~{Math.max(1, Math.ceil(hardwareAiEtaMs / 1000))}s
                   </div>
-                  <p className="text-sm text-gray-500 mt-4">Finding the perfect hardware upgrade for you</p>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  {HARDWARE_AI_STEPS.map((step, index) => (
+                    <div key={step} className="flex items-center gap-3">
+                      <span className={`h-2.5 w-2.5 rounded-full ${
+                        index < hardwareAiStep
+                          ? 'bg-emerald-400'
+                          : index === hardwareAiStep
+                          ? 'bg-cyan-400 animate-pulse'
+                          : 'bg-slate-600'
+                      }`}></span>
+                      <p className={`text-sm ${
+                        index <= hardwareAiStep ? 'text-gray-100' : 'text-gray-500'
+                      }`}>
+                        {step}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="relative h-2 w-full rounded-full bg-slate-800 overflow-hidden mb-3">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-400 via-blue-500 to-cyan-300 transition-all duration-500"
+                    style={{
+                      width: `${Math.min(96, (hardwareAiElapsedMs / Math.max(hardwareAiEtaMs, 1)) * 100)}%`
+                    }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>Confidence modeling in progress...</span>
+                  <div className="flex items-end gap-1 h-4">
+                    {[0, 1, 2, 3, 4, 5].map((bar) => (
+                      <span
+                        key={bar}
+                        className="hardware-ai-bar w-1 rounded-full bg-cyan-400/75"
+                        style={{
+                          animationDelay: `${bar * 0.15}s`,
+                          height: `${8 + ((bar % 3) * 4)}px`
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
 
             {hardwareRecoError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6">
+              <div className="bg-red-500/10 border border-red-400/40 text-red-200 px-4 py-3 rounded mb-6">
                 {hardwareRecoError}
               </div>
             )}
@@ -2882,21 +2966,21 @@ export default function Home() {
               <div className="space-y-4">
                 {/* Spell Correction Suggestion */}
                 {hardwareReco.spell_correction_suggestion && (
-                  <div className="bg-blue-50 border border-blue-200 text-blue-800 px-3 py-2 rounded mb-3">
+                  <div className="bg-cyan-500/10 border border-cyan-400/30 text-cyan-100 px-3 py-2 rounded mb-3">
                     <p className="text-xs font-medium">💡 Did you mean: <span className="font-semibold">"{hardwareReco.spell_correction_suggestion}"</span>?</p>
                   </div>
                 )}
                 
                 {/* Main Recommendation */}
-                <div className="bg-purple-50 border-2 border-purple-200 rounded-lg p-4">
+                <div className="bg-slate-950/75 border border-cyan-400/25 rounded-lg p-4 backdrop-blur-md">
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-2xl">🔧</span>
                     <div>
-                      <h2 className="text-xl font-bold text-gray-900">
+                      <h2 className="text-xl font-bold text-white">
                         {hardwareReco.component}
                       </h2>
                       {hardwareReco.confidence !== undefined && (
-                        <p className="text-xs text-gray-600 mt-0.5">
+                        <p className="text-xs text-cyan-200 mt-0.5">
                           Confidence: {(hardwareReco.confidence * 100).toFixed(0)}%
                         </p>
                       )}
@@ -2905,10 +2989,10 @@ export default function Home() {
 
                   {hardwareReco.extra_explanation && (
                     <div className="mb-4">
-                      <p className="text-base text-gray-700 leading-relaxed font-medium">
+                      <p className="text-base text-gray-100 leading-relaxed font-medium">
                         {typedExtraExplanation}
                         {typedExtraExplanation.length < hardwareReco.extra_explanation.length && (
-                          <span className="inline-block w-0.5 h-4 bg-purple-600 ml-1 animate-pulse">|</span>
+                          <span className="inline-block w-0.5 h-4 bg-cyan-400 ml-1 animate-pulse">|</span>
                         )}
                       </p>
                     </div>
@@ -2916,45 +3000,45 @@ export default function Home() {
 
                   {hardwareReco.definition && (
                     <div className="mb-3">
-                      <p className="text-xs font-semibold text-gray-500 mb-0.5">What is it:</p>
-                      <p className="text-xs text-gray-600 leading-relaxed">{hardwareReco.definition}</p>
+                      <p className="text-xs font-semibold text-cyan-200 mb-0.5">What is it:</p>
+                      <p className="text-xs text-gray-300 leading-relaxed">{hardwareReco.definition}</p>
                     </div>
                   )}
 
                   {hardwareReco.why_useful && (
                     <div className="mb-3">
-                      <p className="text-xs font-semibold text-gray-500 mb-0.5">Why useful:</p>
-                      <p className="text-xs text-gray-600 leading-relaxed">{hardwareReco.why_useful}</p>
+                      <p className="text-xs font-semibold text-cyan-200 mb-0.5">Why useful:</p>
+                      <p className="text-xs text-gray-300 leading-relaxed">{hardwareReco.why_useful}</p>
                     </div>
                   )}
 
                   {/* Fixing Tips - Always show if available, regardless of confidence */}
                   {hardwareReco.fixing_tips && hardwareReco.fixing_tips.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-purple-200">
+                    <div className="mt-4 pt-4 border-t border-white/15">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xl">🔧</span>
-                        <h3 className="text-lg font-bold text-gray-900">Try These Fixes First</h3>
+                        <h3 className="text-lg font-bold text-white">Try These Fixes First</h3>
                       </div>
-                      <p className="text-xs text-gray-600 mb-4">
+                      <p className="text-xs text-gray-300 mb-4">
                         Before purchasing an upgrade, try these troubleshooting steps:
                       </p>
                       <div className="space-y-2">
                         {hardwareReco.fixing_tips.map((tip, index) => (
                           <div 
                             key={index} 
-                            className="bg-white border-l-4 border-blue-500 rounded-r-lg p-3 shadow-sm hover:shadow-md transition-shadow"
+                            className="bg-white/5 border-l-4 border-cyan-400 rounded-r-lg p-3 shadow-sm hover:shadow-md transition-shadow border border-white/10"
                           >
                             <div className="flex items-start gap-3">
-                              <span className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-bold mt-0.5">
+                              <span className="flex-shrink-0 w-6 h-6 bg-cyan-500/20 text-cyan-200 rounded-full flex items-center justify-center text-xs font-bold mt-0.5">
                                 {index + 1}
                               </span>
-                              <p className="text-sm text-gray-700 leading-relaxed flex-1">{tip}</p>
+                              <p className="text-sm text-gray-100 leading-relaxed flex-1">{tip}</p>
                             </div>
                           </div>
                         ))}
                       </div>
-                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                        <p className="text-xs text-yellow-800">
+                      <div className="mt-4 p-3 bg-amber-500/10 border border-amber-400/40 rounded-lg">
+                        <p className="text-xs text-amber-100">
                           <strong>💡 Tip:</strong> If these steps don't resolve the issue, then the upgrade is recommended.
                         </p>
                       </div>
@@ -2964,14 +3048,14 @@ export default function Home() {
 
                 {/* Alternative Recommendations */}
                 {hardwareReco.alternatives && hardwareReco.alternatives.length > 1 && (
-                  <div className="bg-gray-50 rounded-lg p-3">
-                    <h3 className="text-xs font-semibold text-gray-700 mb-2">Other Options:</h3>
+                  <div className="bg-white/5 border border-white/10 rounded-lg p-3">
+                    <h3 className="text-xs font-semibold text-gray-100 mb-2">Other Options:</h3>
                     <div className="space-y-1.5">
                       {hardwareReco.alternatives.slice(1).map((alt) => (
-                        <div key={alt.label} className="bg-white border border-gray-200 rounded p-2">
+                        <div key={alt.label} className="bg-slate-900/80 border border-white/10 rounded p-2">
                           <div className="flex justify-between items-center">
-                            <span className="text-sm font-medium text-gray-900">{alt.label}</span>
-                            <span className="text-xs text-gray-600">
+                            <span className="text-sm font-medium text-gray-100">{alt.label}</span>
+                            <span className="text-xs text-cyan-200">
                               {(alt.confidence * 100).toFixed(0)}%
                             </span>
                           </div>
@@ -2984,12 +3068,12 @@ export default function Home() {
             )}
 
             {!hardwareRecoLoading && !hardwareReco && !hardwareRecoError && (
-              <div className="text-center py-16 bg-white rounded-xl shadow-lg border border-gray-100">
-                <div className="text-gray-300 text-7xl mb-6">🛠️</div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">
+              <div className="text-center py-16 bg-slate-950/65 rounded-xl shadow-lg border border-white/10 backdrop-blur-md">
+                <div className="text-cyan-300/70 text-7xl mb-6">🛠️</div>
+                <h3 className="text-2xl font-bold text-white mb-3">
                   Ready to get hardware recommendations?
                 </h3>
-                <p className="text-gray-600 text-lg mb-8 max-w-md mx-auto">
+                <p className="text-gray-300 text-lg mb-8 max-w-md mx-auto">
                   Describe your PC issue above and we'll suggest the best hardware upgrade for you.
                 </p>
               </div>

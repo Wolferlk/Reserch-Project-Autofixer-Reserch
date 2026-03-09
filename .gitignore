@@ -136,3 +136,10 @@ mlruns/
 .mlflow/
 runs/
 *.ckpt
+
+
+
+
+*.rar
+*.zip
+.gitignore

@@ -116,7 +116,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                   <ul className="space-y-2 text-sm">
                     {shops[0].type_match === 1 && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">Specializes in your error type</strong> - This shop has expertise in handling your specific issue
                         </span>
@@ -124,7 +124,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     )}
                     {shops[0].district_match === 1 && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">Located in your district</strong> - Convenient location in {shops[0].district}
                         </span>
@@ -132,7 +132,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     )}
                     {shops[0].avg_rating && shops[0].avg_rating >= 4.0 && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">High ratings</strong> - {shops[0].avg_rating.toFixed(1)}/5.0 average rating
                         </span>
@@ -140,7 +140,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     )}
                     {shops[0].reviews && shops[0].reviews >= 20 && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">Well-reviewed</strong> - {shops[0].reviews} customer reviews
                         </span>
@@ -148,7 +148,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     )}
                     {Boolean(shops[0].verified) && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">Verified shop</strong> - Platform verified for reliability
                         </span>
@@ -156,7 +156,7 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     )}
                     {shops[0].turnaround_days && shops[0].turnaround_days <= 3 && (
                       <li className="flex items-start gap-2">
-                        <span className="text-green-600 font-bold mt-0.5">✓</span>
+                        <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                         <span className="text-gray-200">
                           <strong className="text-cyan-300">Fast turnaround</strong> - Average {shops[0].turnaround_days} days completion time
                         </span>
@@ -165,14 +165,14 @@ export default function BestMatch({ shops, products, summary, loading = false, o
                     {shops[0].factors && shops[0].factors.length > 0 && (
                       shops[0].factors.slice(0, 2).map((factor: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-2">
-                          <span className="text-green-600 font-bold mt-0.5">✓</span>
+                          <span className="text-emerald-300 font-bold mt-0.5">✓</span>
                           <span className="text-gray-200">{factor}</span>
                         </li>
                       ))
                     )}
                     {shops[0].reason && (
                       <li className="flex items-start gap-2 mt-3 pt-3 border-t border-cyan-400/20">
-                        <span className="text-blue-600 font-bold mt-0.5">💬</span>
+                        <span className="text-cyan-200 font-bold mt-0.5">💬</span>
                         <span className="text-gray-200 italic">{shops[0].reason}</span>
                       </li>
                     )}

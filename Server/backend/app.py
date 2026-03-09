@@ -7,6 +7,9 @@ import uuid
 import logging
 import sys
 import time
+import re
+import html
+import random
 from typing import Dict, Any, Optional
 
 from backend.ocr.ocr_engine import extract_text, clean_text
@@ -96,6 +99,112 @@ logger.info("📚 Loading knowledge base retriever...")
 retriever = KBRetriever()
 retriever.load()
 logger.info("✅ Knowledge base loaded")
+
+
+def _strip_step_prefix(text: str) -> str:
+    return re.sub(r"^\s*(?:\d+[\.\)]|[-*•])\s*", "", text).strip()
+
+
+def _clean_step_text(text: str) -> str:
+    cleaned = html.unescape(text or "")
+    cleaned = cleaned.replace("\r", " ").replace("\n", " ").strip()
+    cleaned = cleaned.replace("&nbsp", " ").replace("nbsp", " ")
+    cleaned = re.sub(r"[%/\\][a-z]{2,5}\b", " ", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"[^A-Za-z0-9\s\.,:;'\-\(\)/]", " ", cleaned)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -.;")
+    cleaned = _strip_step_prefix(cleaned)
+    return cleaned
+
+
+def _is_valid_step(text: str) -> bool:
+    if not text or len(text) < 12:
+        return False
+    if len(text) > 220:
+        return False
+    if re.search(r"\b(?:nbsp|nba|nbc|lorem|undefined|null)\b", text, flags=re.IGNORECASE):
+        return False
+    alpha_chars = len(re.findall(r"[A-Za-z]", text))
+    return alpha_chars >= 8
+
+
+def _extract_numbered_steps(text: str) -> list[str]:
+    if not text:
+        return []
+    normalized = html.unescape(text).replace("\r", "\n")
+    chunks = re.split(r"\n+|(?=\s*\d+[\.\)])|(?=\s*[•\-]\s+)", normalized)
+    steps: list[str] = []
+    for chunk in chunks:
+        cleaned = _clean_step_text(chunk)
+        if _is_valid_step(cleaned):
+            steps.append(cleaned)
+    return steps
+
+
+def _extract_kb_steps(kb_results: list[dict]) -> list[str]:
+    steps: list[str] = []
+    for item in kb_results or []:
+        raw = str(item.get("steps", ""))
+        for part in raw.split("|"):
+            cleaned = _clean_step_text(part)
+            if _is_valid_step(cleaned):
+                steps.append(cleaned)
+    return steps
+
+
+def _dedupe_steps(steps: list[str]) -> list[str]:
+    seen = set()
+    out: list[str] = []
+    for step in steps:
+        key = re.sub(r"\W+", "", step.lower())
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(step)
+    return out
+
+
+def _fallback_steps(cleaned_text: str) -> list[str]:
+    issue_hint = cleaned_text.strip() or "the error message shown in your screenshot"
+    return [
+        f"Confirm the exact error by reproducing the issue and noting when it appears: {issue_hint[:120]}",
+        "Check recent system changes (updates, drivers, or newly installed software) and undo the most recent one first.",
+        "Run a full malware scan and repair corrupted system files using built-in tools (SFC and DISM).",
+        "Restart the related service or application, then retry the same action to verify whether the issue is resolved.",
+        "If the issue remains, apply the latest stable Windows and driver updates, then test again.",
+    ]
+
+
+def _build_professional_fix_plan(
+    cleaned_text: str,
+    kb_results: list[dict],
+    generated_text: str,
+    file_id: str,
+) -> tuple[str, list[str]]:
+    generated_steps = _extract_numbered_steps(generated_text)
+    kb_steps = _extract_kb_steps(kb_results)
+
+    # Prefer model output when it's usable; otherwise rely on curated KB steps.
+    base_steps = generated_steps if len(generated_steps) >= 3 else kb_steps
+    merged_steps = _dedupe_steps(base_steps + kb_steps)
+
+    if len(merged_steps) < 3:
+        merged_steps = _fallback_steps(cleaned_text)
+
+    rng = random.Random(hash(file_id))
+    selected = merged_steps[:8]
+
+    # Add light variation while preserving logical flow.
+    if len(selected) > 4 and rng.random() > 0.5:
+        selected[1], selected[2] = selected[2], selected[1]
+
+    intros = [
+        "Recommended professional troubleshooting plan:",
+        "Follow these validated steps to resolve the issue:",
+        "Use this clear step-by-step fix plan:",
+    ]
+    intro = intros[rng.randint(0, len(intros) - 1)]
+    fix_text = intro + "\n" + "\n".join(f"{i + 1}. {step}" for i, step in enumerate(selected))
+    return fix_text, selected
 
 # --------------------------------------------------
 # Health check
@@ -341,6 +450,7 @@ async def analyze_image(image: UploadFile = File(...)):
     logger.info("🛠 Generating fix steps...")
 
     generated_steps = ""
+    fix_plan_steps: list[str] = []
 
     try:
         if kb_results:
@@ -352,16 +462,32 @@ async def analyze_image(image: UploadFile = File(...)):
             prompt = (
                 "Based on the following known fixing steps:\n"
                 + kb_context
-                + "\n\nGenerate clear step-by-step instructions for this error:\n"
+                + "\n\nGenerate professional, user-friendly step-by-step instructions for this error."
+                + " Keep each step short, practical, and easy to follow.\nError:\n"
                 + cleaned_text
             )
 
-            generated_steps = generate_fix(prompt)
+            raw_generated_steps = generate_fix(
+                prompt,
+                variation_seed=hash(file_id) % (2**31),
+            )
+            generated_steps, fix_plan_steps = _build_professional_fix_plan(
+                cleaned_text=cleaned_text,
+                kb_results=kb_results,
+                generated_text=raw_generated_steps,
+                file_id=file_id,
+            )
 
             logger.info("✅ Fix generation completed")
 
         else:
             logger.info("ℹ️ Skipping fix generation (no KB results)")
+            generated_steps, fix_plan_steps = _build_professional_fix_plan(
+                cleaned_text=cleaned_text,
+                kb_results=kb_results,
+                generated_text="",
+                file_id=file_id,
+            )
 
     except Exception as e:
         logger.warning(f"⚠️ Fix generation failed: {e}")
@@ -378,4 +504,5 @@ async def analyze_image(image: UploadFile = File(...)):
         "clean_text": cleaned_text,
         "matched_articles": kb_results,
         "generated_fix": generated_steps,
+        "fix_plan_steps": fix_plan_steps,
     }

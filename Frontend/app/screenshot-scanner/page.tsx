@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Upload, Image as ImageIcon, Sparkles, Zap, CheckCircle, XCircle, RotateCcw, ChevronRight, Eye, AlertTriangle, BookOpen } from 'lucide-react'
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 
 function GridBg() {
   return (
@@ -51,6 +51,38 @@ function StepBadge({ n }: { n: number }) {
   )
 }
 
+function parseGeneratedSteps(text?: string): string[] {
+  if (!text) return []
+  const compact = text.replace(/\r/g, '').trim()
+  if (!compact) return []
+
+  const numberedParts = compact
+    .split(/\s*(?=\d+[\.\)])/)
+    .map(s => s.trim())
+    .filter(Boolean)
+    .map(s => s.replace(/^\d+[\.\)]\s*/, '').trim())
+    .filter(Boolean)
+
+  if (numberedParts.length >= 2) return numberedParts
+
+  return compact
+    .split(/\n+|[•\-]\s+/)
+    .map(s => s.trim())
+    .filter(Boolean)
+}
+
+const LOADING_STAGES = [
+  '💾 Saving uploaded image...',
+  '🧠 Running image classification...',
+  '🔍 Running OCR text extraction...',
+  '🔎 Matching screenshot against knowledge base...',
+  '🛠 Generating professional fix plan...',
+  '✅ Finalizing response...',
+]
+
+const formatLogTime = () =>
+  new Date().toLocaleTimeString('en-GB', { hour12: false })
+
 export default function ScreenshotScanner() {
   const [file, setFile]         = useState<File | null>(null)
   const [preview, setPreview]   = useState<string | null>(null)
@@ -58,7 +90,10 @@ export default function ScreenshotScanner() {
   const [error, setError]       = useState<string | null>(null)
   const [result, setResult]     = useState<any>(null)
   const [dragging, setDragging] = useState(false)
+  const [loadingLogs, setLoadingLogs] = useState<string[]>([])
+  const [activeStage, setActiveStage] = useState(0)
   const inputRef                = useRef<HTMLInputElement>(null)
+  const logTimerRef             = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const ALLOWED = ['image/png','image/jpeg','image/jpg','image/webp']
 
@@ -81,26 +116,68 @@ export default function ScreenshotScanner() {
     if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0])
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (logTimerRef.current) clearInterval(logTimerRef.current)
+    }
+  }, [])
+
   const analyze = async () => {
     if (!file) return
     setLoading(true); setError(null)
+    setLoadingLogs([])
+    setActiveStage(0)
+
+    const pushLog = (line: string) => {
+      setLoadingLogs(prev => [...prev, `${formatLogTime()} | INFO | AUTO_FIXER | ${line}`].slice(-14))
+    }
+
+    let stageIndex = 0
+    pushLog('📥 New analyze request received')
+    pushLog(LOADING_STAGES[stageIndex])
+    setActiveStage(1)
+    stageIndex += 1
+
+    if (logTimerRef.current) clearInterval(logTimerRef.current)
+    logTimerRef.current = setInterval(() => {
+      if (stageIndex >= LOADING_STAGES.length) return
+      pushLog(LOADING_STAGES[stageIndex])
+      setActiveStage(stageIndex + 1)
+      stageIndex += 1
+    }, 1700)
+
     const form = new FormData()
     form.append('image', file)
     try {
       const res  = await fetch('http://127.0.0.1:8001/analyze', { method: 'POST', body: form })
       const data = await res.json()
+      pushLog('🏁 Analyze request completed')
       setResult(data)
     } catch {
+      pushLog('❌ Analyze request failed')
       setError('Failed to analyze image. Make sure the API server is running.')
     } finally {
+      if (logTimerRef.current) {
+        clearInterval(logTimerRef.current)
+        logTimerRef.current = null
+      }
       setLoading(false)
     }
   }
 
-  const reset = () => { setFile(null); setPreview(null); setResult(null); setError(null) }
+  const reset = () => {
+    if (logTimerRef.current) clearInterval(logTimerRef.current)
+    setFile(null); setPreview(null); setResult(null); setError(null); setLoadingLogs([]); setActiveStage(0)
+  }
 
   const cls        = result?.image_classification
-  const steps      = result?.matched_articles?.[0]?.steps?.split('|').map((s: string) => s.trim()).filter(Boolean) ?? []
+  const apiFixSteps = Array.isArray(result?.fix_plan_steps)
+    ? result.fix_plan_steps.map((s: unknown) => String(s).trim()).filter(Boolean)
+    : []
+  const generatedSteps = parseGeneratedSteps(result?.generated_fix)
+  const kbSteps        = result?.matched_articles?.[0]?.steps?.split('|').map((s: string) => s.trim()).filter(Boolean) ?? []
+  const steps          = apiFixSteps.length > 0 ? apiFixSteps : (generatedSteps.length > 0 ? generatedSteps : kbSteps)
+  const usingAiSteps   = apiFixSteps.length > 0 || generatedSteps.length > 0
   const topArticle = result?.matched_articles?.[0]
 
   return (
@@ -236,25 +313,59 @@ export default function ScreenshotScanner() {
               <AnimatePresence>
                 {loading && (
                   <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="flex flex-col items-center gap-5 py-10">
-                    <div className="relative">
-                      <div className="w-20 h-20 rounded-full border-4 border-white/5" />
-                      <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-cyan-400 border-r-blue-500 animate-spin" />
-                      <div className="absolute inset-3 rounded-full flex items-center justify-center"
-                        style={{ background: 'radial-gradient(circle,rgba(34,211,238,0.15),transparent)' }}>
-                        <Eye size={20} className="text-cyan-400" />
+                    className="py-8">
+                    <div className="rounded-2xl border border-cyan-500/25 bg-[#05090f] overflow-hidden"
+                      style={{ boxShadow: '0 0 40px rgba(34,211,238,0.1)' }}>
+                      <div className="px-4 py-3 border-b border-cyan-500/15 flex items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full bg-red-400/70" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-yellow-300/70" />
+                        <div className="w-2.5 h-2.5 rounded-full bg-green-400/70" />
+                        <p className="text-cyan-300/90 text-xs font-semibold tracking-wide ml-2">AUTO_FIXER Live Analysis Console</p>
+                        <div className="ml-auto flex items-center gap-2 text-[11px] text-cyan-300/80">
+                          <motion.div
+                            className="w-1.5 h-1.5 rounded-full bg-cyan-400"
+                            animate={{ opacity: [0.3, 1, 0.3] }}
+                            transition={{ duration: 1.2, repeat: Infinity }}
+                          />
+                          Running
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-white font-semibold text-lg mb-1">Scanning your screenshot…</p>
-                      <p className="text-gray-500 text-sm">Vision AI is extracting and classifying the error</p>
-                    </div>
-                    <div className="flex gap-1.5">
-                      {[0,1,2].map(i => (
-                        <motion.div key={i} className="w-2 h-2 rounded-full bg-cyan-400"
-                          animate={{ scale: [1,1.5,1], opacity: [0.5,1,0.5] }}
-                          transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }} />
-                      ))}
+
+                      <div className="px-4 py-3 border-b border-cyan-500/10">
+                        <div className="h-2 rounded-full bg-cyan-950/70 overflow-hidden">
+                          <motion.div
+                            className="h-full"
+                            initial={{ width: '8%' }}
+                            animate={{ width: `${Math.min(100, Math.round((activeStage / LOADING_STAGES.length) * 100))}%` }}
+                            transition={{ duration: 0.45, ease: 'easeOut' }}
+                            style={{ background: 'linear-gradient(90deg,#22d3ee,#3b82f6,#a855f7)' }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-cyan-200/75 mt-2">
+                          Processing screenshot, extracting OCR, matching knowledge, and preparing professional steps...
+                        </p>
+                      </div>
+
+                      <div className="p-4 max-h-72 overflow-y-auto font-mono text-xs leading-relaxed space-y-1">
+                        {loadingLogs.map((line, i) => (
+                          <motion.p
+                            key={`${line}-${i}`}
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.22 }}
+                            className="text-cyan-100/85 break-words"
+                          >
+                            {line}
+                          </motion.p>
+                        ))}
+                        <motion.p
+                          className="text-cyan-300/80"
+                          animate={{ opacity: [0.4, 1, 0.4] }}
+                          transition={{ duration: 1.1, repeat: Infinity }}
+                        >
+                          {'>'} waiting for model response...
+                        </motion.p>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -395,7 +506,7 @@ export default function ScreenshotScanner() {
                           style={{ background: 'linear-gradient(135deg,#22d3ee,#3b82f6)' }}>
                           <ChevronRight size={13} className="text-white" />
                         </div>
-                        <span className="text-sm font-bold text-white">Recommended Fix Steps</span>
+                        <span className="text-sm font-bold text-white">{usingAiSteps ? 'AI Fix Plan' : 'Recommended Fix Steps'}</span>
                         <span className="ml-auto text-xs text-gray-500">{steps.length} steps</span>
                       </div>
                       <div className="p-6">
@@ -413,7 +524,7 @@ export default function ScreenshotScanner() {
                     </motion.div>
                   )}
 
-                  {result.generated_fix && (
+                  {result.generated_fix && !usingAiSteps && (
                     <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}
                       className="rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-6"
                       style={{ boxShadow: '0 8px 32px rgba(34,211,238,0.08)' }}>
