@@ -10,6 +10,7 @@ import {
   Sparkles,
   Wand2,
 } from 'lucide-react'
+import AdminSubmissionForm from '@/components/AdminSubmissionForm'
 
 type TutorialChatApiResponse = {
   answer?: string
@@ -496,6 +497,12 @@ export default function TutorialsPage() {
                   </summary>
                   <pre className="mt-3 whitespace-pre-wrap text-xs text-slate-300">{result.rawAnswer}</pre>
                 </details>
+
+                <AdminSubmissionForm
+                  page="tutorials"
+                  defaultErrorName={result.software}
+                  generatedOutput={result.steps.join('\n')}
+                />
               </div>
             )}
           </motion.div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import AdminSubmissionForm from '@/components/AdminSubmissionForm';
 
 interface Solution {
   error_name: string;
@@ -935,6 +936,12 @@ export default function Home() {
                 </p>
               </div>
             )}
+
+            <AdminSubmissionForm
+              page="error-fixer"
+              defaultErrorName={solution.error_name}
+              generatedOutput={solution.steps.join('\n')}
+            />
           </div>
         )}
 

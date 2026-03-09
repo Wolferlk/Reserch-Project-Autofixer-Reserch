@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, Upload, Image as ImageIcon, Sparkles, Zap, CheckCircle, XCircle, RotateCcw, ChevronRight, Eye, AlertTriangle, BookOpen } from 'lucide-react'
 import { useState, useRef, useCallback, useEffect } from 'react'
+import AdminSubmissionForm from '@/components/AdminSubmissionForm'
 
 function GridBg() {
   return (
@@ -560,6 +561,12 @@ export default function ScreenshotScanner() {
                   )}
                 </div>
               </div>
+
+              <AdminSubmissionForm
+                page="screenshot-scanner"
+                defaultErrorName={cls?.category || topArticle?.title || ''}
+                generatedOutput={steps.join('\n') || String(result.generated_fix || '')}
+              />
 
               {/* Bottom CTAs */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
