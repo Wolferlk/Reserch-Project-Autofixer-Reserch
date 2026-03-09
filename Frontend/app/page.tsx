@@ -236,7 +236,7 @@ export default function Home() {
                 </div>
               </div>
               <div className="relative w-full pt-[56.25%]">
-                <iframe className="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/FIfblTG9R5k"
+                <iframe className="absolute inset-0 w-full h-full" src="https://www.youtube.com/embed/q_LC5LBWcfA?si=LAm8qkeNeqj44b6Z"
                   title="Auto Fixer Demo" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen />
               </div>
             </div>
