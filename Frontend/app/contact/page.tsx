@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Send, Loader2, CheckCircle, Mail, Phone, MapPin, Clock } from 'lucide-react'
+import { Send, Loader2, CheckCircle, Mail, Phone, MapPin, Clock, MessageSquare, Sparkles, ArrowRight } from 'lucide-react'
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -57,19 +57,19 @@ export default function Contact() {
     {
       icon: Phone,
       label: 'Phone',
-      value: '+1 (555) 123-4567',
+      value: '+94 12345678',
       color: 'from-cyan-500 to-teal-500',
     },
     {
       icon: MapPin,
       label: 'Address',
-      value: 'San Francisco, CA, USA',
+      value: 'Malabe, Colombo, Sri Lanka',
       color: 'from-purple-500 to-pink-500',
     },
     {
       icon: Clock,
       label: 'Hours',
-      value: 'Mon-Fri: 9AM-6PM PST',
+      value: 'Mon-Fri: 9AM-6PM IST',
       color: 'from-pink-500 to-red-500',
     },
   ]
@@ -122,59 +122,71 @@ export default function Contact() {
     }
   }
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.6 },
-    },
-  }
-
   return (
-    <div className="min-h-screen py-20">
-      <div className="container-custom">
-        {/* Header */}
+    <div className="min-h-screen py-20 bg-gradient-to-b from-slate-900/50 via-slate-950 to-slate-900/50">
+      <div className="container-custom space-y-20">
+        {/* Enhanced Header */}
         <motion.div
-          initial={{ opacity: 0, y: -20 }}
+          initial={{ opacity: 0, y: -30 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="text-center mb-8 relative"
         >
-          <h1 className="section-title mb-4">Get In Touch</h1>
-          <p className="section-subtitle">
+          <motion.div
+            className="inline-flex items-center gap-2 mb-6 px-4 py-2 rounded-full bg-gradient-to-r from-cyan-500/10 to-blue-500/10 border border-cyan-500/30"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.1 }}
+          >
+            <MessageSquare className="w-4 h-4 text-cyan-400" />
+            <span className="text-sm font-semibold text-cyan-300">We're Here To Help</span>
+          </motion.div>
+          <h1 className="section-title mb-6 bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 bg-clip-text text-transparent">
+            Get In Touch
+          </h1>
+          <p className="section-subtitle text-gray-300 max-w-3xl mx-auto leading-relaxed">
             Have a question? We'd love to hear from you. Send us a message and we'll respond as soon as possible.
           </p>
         </motion.div>
 
         {/* Contact Info Cards */}
         <motion.div
-          variants={containerVariants}
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2,
+              },
+            },
+          }}
           initial="hidden"
           animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
           {contactInfo.map((info, index) => {
             const Icon = info.icon
             return (
-              <motion.div key={index} variants={itemVariants}>
-                <div className={`glass-card p-6 rounded-xl hover:bg-white/[0.08] transition-all duration-300`}>
-                  <div className={`w-12 h-12 rounded-lg bg-gradient-to-br ${info.color} p-3 mb-4`}>
-                    <Icon className="w-full h-full text-white" />
+              <motion.div
+                key={index}
+                variants={{
+                  hidden: { opacity: 0, y: 30 },
+                  visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
+                }}
+              >
+                <div className="relative glass-card p-8 rounded-xl border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 group overflow-hidden h-full">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative">
+                    <motion.div
+                      className={`w-12 h-12 rounded-lg bg-gradient-to-br ${info.color} p-3 mb-5 group-hover:shadow-lg group-hover:shadow-cyan-500/30 transition-all duration-300`}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                    >
+                      <Icon className="w-full h-full text-white" />
+                    </motion.div>
+                    <h3 className="font-semibold text-white mb-2 text-lg">{info.label}</h3>
+                    <p className="text-gray-400 leading-relaxed">{info.value}</p>
                   </div>
-                  <h3 className="font-semibold text-white mb-2">{info.label}</h3>
-                  <p className="text-gray-400">{info.value}</p>
                 </div>
               </motion.div>
             )
@@ -182,185 +194,198 @@ export default function Contact() {
         </motion.div>
 
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Contact Form */}
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.1 }}
             className="lg:col-span-2"
           >
-            <div className="glass-card p-8 rounded-2xl">
-              <h2 className="text-2xl font-bold text-white mb-6">Send us a Message</h2>
-              
-              {submitted ? (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex items-center justify-center py-12"
-                >
-                  <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-4">
-                      <CheckCircle className="text-white" size={32} />
-                    </div>
-                    <h3 className="text-2xl font-bold text-white mb-2">Message Sent!</h3>
-                    <p className="text-gray-400">Thank you for contacting us. We'll get back to you soon.</p>
-                  </div>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {submitError && (
-                    <div className="rounded-lg border border-red-400/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-                      {submitError}
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400/50 transition-all"
-                        placeholder="Your name"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Email Address *
-                      </label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleChange}
-                        required
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400/50 transition-all"
-                        placeholder="your@email.com"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Phone (Optional)
-                      </label>
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400/50 transition-all"
-                        placeholder="+1 (555) 000-0000"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-300 mb-2">
-                        Subject *
-                      </label>
-                      <select
-                        name="subject"
-                        value={formData.subject}
-                        onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white focus:outline-none focus:border-cyan-400/50 transition-all"
-                      >
-                        {subjects.map((subject) => (
-                          <option key={subject.value} value={subject.value} className="bg-gray-900">
-                            {subject.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Message *
-                    </label>
-                    <textarea
-                      name="message"
-                      value={formData.message}
-                      onChange={handleChange}
-                      required
-                      rows={6}
-                      className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400/50 transition-all resize-none"
-                      placeholder="Tell us what's on your mind..."
-                    />
-                  </div>
-
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full px-6 py-3 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-semibold hover:shadow-lg hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+            <div className="glass-card p-12 rounded-2xl border border-cyan-500/20 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative">
+                <h2 className="text-3xl font-bold text-white mb-2">Send us a Message</h2>
+                <p className="text-gray-400 mb-8">Fill out the form below and we'll get back to you within 24 hours</p>
+                
+                {submitted ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex items-center justify-center py-16"
                   >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="animate-spin" size={20} />
-                        Sending...
-                      </>
-                    ) : (
-                      <>
-                        <Send size={20} />
-                        Send Message
-                      </>
-                    )}
-                  </motion.button>
-                </form>
-              )}
+                    <div className="text-center">
+                      <motion.div 
+                        className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/50"
+                        animate={{ scale: [1, 1.1, 1] }}
+                        transition={{ duration: 0.6 }}
+                      >
+                        <CheckCircle className="text-white" size={40} />
+                      </motion.div>
+                      <h3 className="text-3xl font-bold text-white mb-3">Message Sent!</h3>
+                      <p className="text-gray-400 text-lg">Thank you for contacting us. We'll get back to you soon.</p>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <form onSubmit={handleSubmit} className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                        <label className="block text-sm font-semibold text-gray-300 mb-3">
+                          Full Name *
+                        </label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={formData.name}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all duration-300"
+                          placeholder="Your name"
+                        />
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+                        <label className="block text-sm font-semibold text-gray-300 mb-3">
+                          Email Address *
+                        </label>
+                        <input
+                          type="email"
+                          name="email"
+                          value={formData.email}
+                          onChange={handleChange}
+                          required
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all duration-300"
+                          placeholder="your@email.com"
+                        />
+                      </motion.div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                        <label className="block text-sm font-semibold text-gray-300 mb-3">
+                          Phone (Optional)
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all duration-300"
+                          placeholder="+1 (555) 000-0000"
+                        />
+                      </motion.div>
+                      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}>
+                        <label className="block text-sm font-semibold text-gray-300 mb-3">
+                          Subject *
+                        </label>
+                        <select
+                          name="subject"
+                          value={formData.subject}
+                          onChange={handleChange}
+                          className="w-full px-4 py-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all duration-300"
+                        >
+                          {subjects.map((subject) => (
+                            <option key={subject.value} value={subject.value} className="bg-gray-900">
+                              {subject.label}
+                            </option>
+                          ))}
+                        </select>
+                      </motion.div>
+                    </div>
+
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                      <label className="block text-sm font-semibold text-gray-300 mb-3">
+                        Message *
+                      </label>
+                      <textarea
+                        name="message"
+                        value={formData.message}
+                        onChange={handleChange}
+                        required
+                        rows={6}
+                        className="w-full px-4 py-3 rounded-lg bg-white/5 border border-cyan-500/20 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:bg-white/10 transition-all duration-300 resize-none"
+                        placeholder="Tell us what's on your mind..."
+                      />
+                    </motion.div>
+
+                    <motion.button
+                      whileHover={{ scale: 1.05, y: -2 }}
+                      whileTap={{ scale: 0.95 }}
+                      type="submit"
+                      disabled={isLoading}
+                      className="w-full px-6 py-4 rounded-lg bg-gradient-to-r from-cyan-400 to-blue-500 text-white font-bold hover:shadow-xl hover:shadow-cyan-500/60 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                    >
+                      {isLoading ? (
+                        <>
+                          <Loader2 className="animate-spin" size={20} />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <Send size={20} />
+                          Send Message
+                        </>
+                      )}
+                    </motion.button>
+                  </form>
+                )}
+              </div>
             </div>
           </motion.div>
 
           {/* Support Info */}
           <motion.div
-            initial={{ opacity: 0, x: 20 }}
+            initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
             className="space-y-6"
           >
-            <div className="glass-card p-8 rounded-2xl">
-              <h3 className="text-xl font-bold text-white mb-4">Quick Support</h3>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold mt-1">•</span>
-                  <span className="text-gray-400">Response time: 24 hours</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold mt-1">•</span>
-                  <span className="text-gray-400">Available Mon-Fri</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold mt-1">•</span>
-                  <span className="text-gray-400">Multiple support channels</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-cyan-400 font-bold mt-1">•</span>
-                  <span className="text-gray-400">Dedicated support team</span>
-                </li>
-              </ul>
+            {/* Quick Support */}
+            <div className="glass-card p-8 rounded-2xl border border-cyan-500/20 overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-cyan-400" />
+                  Quick Support
+                </h3>
+                <ul className="space-y-4">
+                  {[
+                    'Response time: 24 hours',
+                    'Available Mon-Fri',
+                    'Multiple support channels',
+                    'Dedicated support team'
+                  ].map((item, idx) => (
+                    <motion.li key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + idx * 0.05 }} className="flex items-start gap-3">
+                      <span className="text-cyan-400 font-bold mt-1 text-lg">•</span>
+                      <span className="text-gray-400">{item}</span>
+                    </motion.li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
-            <div className="glass-card p-8 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20">
-              <h3 className="text-xl font-bold text-white mb-4">Social Media</h3>
-              <p className="text-gray-400 mb-4">Follow us for updates and announcements</p>
-              <div className="space-y-2">
-                {['Twitter', 'LinkedIn', 'Facebook', 'Instagram'].map((social) => (
-                  <a
-                    key={social}
-                    href="#"
-                    className="block px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-300 hover:text-cyan-400 transition-all"
-                  >
-                    {social}
-                  </a>
-                ))}
+            {/* Social Media */}
+            <div className="glass-card p-8 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/30 overflow-hidden group hover:border-purple-500/50 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-pink-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="relative">
+                <h3 className="text-xl font-bold text-white mb-3">Follow Us</h3>
+                <p className="text-gray-400 mb-6">Stay updated with announcements</p>
+                <div className="space-y-3">
+                  {['Twitter', 'LinkedIn', 'Facebook', 'Instagram'].map((social, idx) => (
+                    <motion.a
+                      key={social}
+                      href="#"
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.4 + idx * 0.05 }}
+                      whileHover={{ x: 5 }}
+                      className="block px-4 py-3 rounded-lg bg-white/5 hover:bg-white/10 hover:border hover:border-purple-400/50 text-gray-300 hover:text-purple-300 transition-all duration-300 flex items-center justify-between group/social"
+                    >
+                      {social}
+                      <ArrowRight className="w-4 h-4 opacity-0 group-hover/social:opacity-100 transition-opacity" />
+                    </motion.a>
+                  ))}
+                </div>
               </div>
             </div>
           </motion.div>
@@ -368,29 +393,39 @@ export default function Contact() {
 
         {/* FAQ Section */}
         <motion.section
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
+          viewport={{ once: true, margin: "-100px" }}
         >
-          <h2 className="section-title text-center mb-12">Frequently Asked Questions</h2>
-          <div className="space-y-4">
+          <div className="text-center mb-16">
+            <h2 className="section-title mb-4 text-white">Frequently Asked Questions</h2>
+            <p className="text-gray-400 text-lg">Find answers to common questions about our service</p>
+          </div>
+          <div className="space-y-4 max-w-4xl mx-auto">
             {faqs.map((faq, index) => (
               <motion.details
                 key={index}
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.05 }}
-                className="glass-card p-6 rounded-xl group cursor-pointer"
+                viewport={{ once: true }}
+                className="glass-card rounded-xl border border-cyan-500/20 hover:border-cyan-500/50 transition-all duration-300 group overflow-hidden"
               >
-                <summary className="flex items-center justify-between font-semibold text-white hover:text-cyan-400 transition-colors">
-                  {faq.question}
-                  <span className="text-cyan-400 group-open:rotate-180 transition-transform">
+                <summary className="flex items-center justify-between font-semibold text-white hover:text-cyan-400 transition-colors p-6 cursor-pointer">
+                  <span className="text-lg">{faq.question}</span>
+                  <motion.span 
+                    className="text-cyan-400 flex-shrink-0"
+                    animate={{ rotate: 0 }}
+                  >
                     ▼
-                  </span>
+                  </motion.span>
                 </summary>
-                <p className="text-gray-400 mt-4 leading-relaxed">
-                  {faq.answer}
-                </p>
+                <div className="px-6 pb-6 border-t border-cyan-500/20">
+                  <p className="text-gray-400 leading-relaxed">
+                    {faq.answer}
+                  </p>
+                </div>
               </motion.details>
             ))}
           </div>
