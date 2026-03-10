@@ -26,6 +26,38 @@ def _shorten(text: str, limit: int = 140) -> str:
     return text[: limit - 3].rstrip() + "..."
 
 
+def _clean_context_step(text: str) -> str:
+    text = re.sub(r"\s+", " ", text).strip(" .,-")
+    text = re.split(r"\s*-{4,}\s*", text, maxsplit=1)[0]
+    text = re.split(
+        r"(?i)\s+(?:error\s+\d+|checklist:|tips:|evidence:|summary:|title:)\b",
+        text,
+        maxsplit=1,
+    )[0]
+    text = re.sub(r"(?i)\b(?:cause|symptoms|possible causes|solution steps)\s*:\s*$", "", text).strip(" .,-")
+    return text
+
+
+def _is_usable_context_step(step: str) -> bool:
+    if len(step.split()) < 4:
+        return False
+    if len(step) > 140:
+        return False
+    lowered = step.lower()
+    blocked_terms = [
+        "error troubleshooting handbook",
+        "issue description",
+        "possible causes",
+        "solution steps",
+        "this document provides",
+    ]
+    if any(term in lowered for term in blocked_terms):
+        return False
+    if re.search(r"(?i)\berror\s+\d+\b", step):
+        return False
+    return True
+
+
 def _extract_step_actions(context: str, limit: int = 6) -> List[str]:
     clean = re.sub(r"\s+", " ", context)
     clean = re.sub(r"[^\x20-\x7E]", " ", clean)
@@ -39,8 +71,8 @@ def _extract_step_actions(context: str, limit: int = 6) -> List[str]:
     steps = []
     seen = set()
     for raw in matches:
-        step = re.sub(r"\s+", " ", raw).strip(" .,-")
-        if len(step.split()) < 4:
+        step = _clean_context_step(raw)
+        if not _is_usable_context_step(step):
             continue
         key = step.lower()
         if key in seen:
@@ -128,7 +160,7 @@ def _build_tutorial_steps(query: str, software_name: str, context_steps: List[st
     query_l = query.lower()
     if any(term in query_l for term in ["export", "render", "output"]):
         return _build_export_steps(software_name)
-    if context_steps:
+    if len(context_steps) >= 4:
         return context_steps[:6]
     return [
         f"Open {software_name} and go to the exact screen or project area related to your request.",

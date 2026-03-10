@@ -4,6 +4,11 @@ import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 
+try:
+    from retrieval.processed_steps_index import get_processed_steps_index
+except ModuleNotFoundError:
+    from .processed_steps_index import get_processed_steps_index
+
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.abspath(os.path.join(CURRENT_DIR, "..", ".."))
 
@@ -36,6 +41,11 @@ def search(query, selected_software=None, top_k=5):
 
     predicted_type = model.predict([query])[0]
 
+    processed_index = get_processed_steps_index()
+    processed_results = processed_index.search(query, selected_software=selected_software, top_k=top_k)
+    if not processed_results.empty:
+        return predicted_type, processed_results
+
     filtered_df = df[df["problem_type"] == predicted_type]
     if selected_software:
         filtered_df = filtered_df[filtered_df["software"] == selected_software]
@@ -53,6 +63,7 @@ def search(query, selected_software=None, top_k=5):
     similarities = cosine_similarity(query_vector, filtered_vectors).flatten()
 
     top_indices = similarities.argsort()[-top_k:][::-1]
-    results = filtered_df.iloc[top_indices]
+    results = filtered_df.iloc[top_indices].copy()
+    results["source"] = "dataset"
 
     return predicted_type, results
