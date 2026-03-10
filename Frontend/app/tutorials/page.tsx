@@ -5,6 +5,9 @@ import { motion } from 'framer-motion'
 import {
   AlertCircle,
   CheckCircle2,
+  ClipboardCheck,
+  FileText,
+  Lightbulb,
   Loader2,
   RefreshCw,
   Sparkles,
@@ -14,6 +17,14 @@ import AdminSubmissionForm from '@/components/AdminSubmissionForm'
 
 type TutorialChatApiResponse = {
   answer?: string
+  title?: string
+  summary?: string
+  steps?: string[]
+  checklist?: string[]
+  tips?: string[]
+  response_mode?: string
+  issue_type?: string
+  software_scope?: string
 }
 
 type SoftwareListApiResponse = {
@@ -24,7 +35,13 @@ type GenerationResult = {
   software: string
   prompt: string
   rawAnswer: string
+  title: string
+  summary: string
   steps: string[]
+  checklist: string[]
+  tips: string[]
+  responseMode: string
+  issueType: string
   generatedAt: Date
 }
 
@@ -65,7 +82,7 @@ async function fetchSoftwareList(): Promise<string[]> {
   return Array.isArray(data.softwares) ? data.softwares : []
 }
 
-async function getAIResponse(message: string, software: string): Promise<string> {
+async function getAIResponse(message: string, software: string): Promise<TutorialChatApiResponse> {
   const response = await fetch(`${API_BASE_URL}/software-instruction/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -81,11 +98,21 @@ async function getAIResponse(message: string, software: string): Promise<string>
   }
 
   const data = (await response.json()) as TutorialChatApiResponse
-  if (!data.answer?.trim()) {
-    return 'No response from the tutorial service. Please retry.'
+  if (!data.answer?.trim() && (!Array.isArray(data.steps) || data.steps.length === 0)) {
+    return {
+      answer: 'No response from the tutorial service. Please retry.',
+      title: 'No response generated',
+      summary: 'The tutorial service returned an empty response.',
+      steps: [],
+      checklist: [],
+      tips: [],
+      response_mode: 'Troubleshooting guidance',
+      issue_type: 'General',
+      software_scope: software,
+    }
   }
 
-  return data.answer
+  return data
 }
 
 function formatSoftwareLabel(software: string): string {
@@ -104,6 +131,12 @@ function isNoiseLine(line: string): boolean {
   if (/^recommended troubleshooting steps:?$/i.test(line.trim())) return true
   if (/^software scope:/i.test(line.trim())) return true
   if (/^detected issue type:/i.test(line.trim())) return true
+  if (/^title:/i.test(line.trim())) return true
+  if (/^summary:/i.test(line.trim())) return true
+  if (/^steps:?$/i.test(line.trim())) return true
+  if (/^checklist:?$/i.test(line.trim())) return true
+  if (/^tips:?$/i.test(line.trim())) return true
+  if (/^evidence:?$/i.test(line.trim())) return true
   if (/^evidence snippets:?$/i.test(line.trim())) return true
   if (/^end of response\.?$/i.test(line.trim())) return true
 
@@ -161,6 +194,10 @@ function extractSteps(answer: string): string[] {
     .filter((s) => s.length > 12 && !isNoiseLine(s))
 
   return sentenceSteps.slice(0, 8)
+}
+
+function ensureList(values?: string[]): string[] {
+  return Array.isArray(values) ? values.filter((item) => item.trim().length > 0) : []
 }
 
 export default function TutorialsPage() {
@@ -259,17 +296,27 @@ export default function TutorialsPage() {
     const randomModelDelay = 1800 + Math.floor(Math.random() * 3600)
 
     try {
-      const [answer] = await Promise.all([
+      const [responseData] = await Promise.all([
         getAIResponse(query, selectedSoftware),
         wait(randomModelDelay),
       ])
 
-      const steps = extractSteps(answer)
+      const rawAnswer = responseData.answer?.trim() || ''
+      const steps = ensureList(responseData.steps)
+      const checklist = ensureList(responseData.checklist)
+      const tips = ensureList(responseData.tips)
+
       setResult({
         software: selectedSoftware,
         prompt: query,
-        rawAnswer: answer,
-        steps,
+        rawAnswer,
+        title: responseData.title?.trim() || `Guide for ${formatSoftwareLabel(selectedSoftware)}`,
+        summary: responseData.summary?.trim() || 'Follow the generated steps below.',
+        steps: steps.length > 0 ? steps : extractSteps(rawAnswer),
+        checklist,
+        tips,
+        responseMode: responseData.response_mode?.trim() || 'Troubleshooting guidance',
+        issueType: responseData.issue_type?.trim() || 'General',
         generatedAt: new Date(),
       })
     } catch {
@@ -482,14 +529,70 @@ export default function TutorialsPage() {
                   <p className="mt-1 text-xs text-slate-500">Generated at {result.generatedAt.toLocaleTimeString()}</p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-500/10 via-slate-950/90 to-slate-950/90 p-5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
+                      <FileText size={12} /> {result.responseMode}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-3 py-1 text-xs text-slate-300">
+                      {result.issueType}
+                    </span>
+                  </div>
+                  <h2 className="mt-3 text-2xl font-semibold text-white">{result.title}</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">{result.summary}</p>
+                </div>
+
+                <div className="space-y-3">
                   {result.steps.map((step, idx) => (
-                    <div key={`${idx}-${step.slice(0, 20)}`} className="rounded-xl border border-slate-800 bg-slate-950/80 px-4 py-3">
-                      <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">Step {idx + 1}</p>
-                      <p className="text-sm text-slate-200">{step}</p>
+                    <div key={`${idx}-${step.slice(0, 20)}`} className="flex gap-4 rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-4">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-sm font-semibold text-cyan-300">
+                        {idx + 1}
+                      </div>
+                      <div className="pt-0.5">
+                        <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-cyan-300">Action Step</p>
+                        <p className="text-sm leading-6 text-slate-200">{step}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
+
+                {(result.checklist.length > 0 || result.tips.length > 0) && (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {result.checklist.length > 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+                          <ClipboardCheck size={16} className="text-emerald-300" />
+                          Verification Checklist
+                        </div>
+                        <div className="space-y-2">
+                          {result.checklist.map((item) => (
+                            <div key={item} className="flex gap-2 text-sm text-slate-300">
+                              <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-emerald-300" />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {result.tips.length > 0 && (
+                      <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
+                          <Lightbulb size={16} className="text-amber-300" />
+                          Practical Tips
+                        </div>
+                        <div className="space-y-2">
+                          {result.tips.map((item) => (
+                            <div key={item} className="flex gap-2 text-sm text-slate-300">
+                              <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-300" />
+                              <span>{item}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <details className="rounded-xl border border-slate-800 bg-slate-950/80 px-4 py-3">
                   <summary className="cursor-pointer text-xs font-semibold uppercase tracking-wider text-slate-400">

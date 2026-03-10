@@ -66,72 +66,171 @@ def _select_relevant_sentences(context: str, query: str, limit: int = 3) -> List
     return [item[2] for item in ranked[:limit] if item[0] > 0] or sentences[:limit]
 
 
+def _is_tutorial_query(query: str) -> bool:
+    query_l = query.lower()
+    tutorial_terms = [
+        "how to",
+        "steps to",
+        "guide",
+        "tutorial",
+        "walkthrough",
+        "export",
+        "render",
+        "create",
+        "install",
+        "set up",
+        "setup",
+        "configure",
+    ]
+    return any(term in query_l for term in tutorial_terms)
+
+
+def _infer_software_name(context: str, query: str) -> str:
+    combined = f"{context} {query}".lower()
+    aliases = {
+        "after effects": "After Effects",
+        "after_effects": "After Effects",
+        "premiere pro": "Premiere Pro",
+        "photoshop": "Photoshop",
+        "illustrator": "Illustrator",
+        "vs code": "VS Code",
+        "visual studio code": "VS Code",
+        "android studio": "Android Studio",
+        "intellij idea": "IntelliJ IDEA",
+    }
+    for key, value in aliases.items():
+        if key in combined:
+            return value
+    return "the software"
+
+
+def _build_export_steps(software_name: str) -> List[str]:
+    if software_name == "After Effects":
+        return [
+            "Open the final composition you want to export and confirm the work area covers the full section you want in the video.",
+            "Go to File > Export or Composition > Add to Render Queue so the finished composition is sent to the render pipeline.",
+            "Open Render Settings and keep Best Settings unless you specifically need a draft or lower-resolution export.",
+            "Open Output Module, choose a common delivery format, and confirm video/audio settings match the platform where you will publish.",
+            "Choose the output folder and file name, then make sure you have enough disk space before starting the render.",
+            "Start the export, wait for the render to finish, then play the file back fully to confirm video quality, timing, and audio are correct.",
+        ]
+    return [
+        "Open the project or file you want to export and verify that the final edits are complete before starting.",
+        "Use the export, render, or save-as-video option from the main menu so you are working from the app's supported export flow.",
+        "Choose the output format, resolution, and quality settings that match where the file will be used.",
+        "Select the save location and file name, then confirm storage space and permissions for that folder.",
+        "Run the export and avoid editing the project until the process completes successfully.",
+        "Open the exported file and check playback quality, size, and audio before sharing it or uploading it anywhere.",
+    ]
+
+
+def _build_tutorial_steps(query: str, software_name: str, context_steps: List[str]) -> List[str]:
+    query_l = query.lower()
+    if any(term in query_l for term in ["export", "render", "output"]):
+        return _build_export_steps(software_name)
+    if context_steps:
+        return context_steps[:6]
+    return [
+        f"Open {software_name} and go to the exact screen or project area related to your request.",
+        "Prepare the required file, settings, or assets first so you do not have to restart midway through the workflow.",
+        "Use the main menu or toolbar option that matches the task you want to complete instead of testing random settings.",
+        "Adjust the key options one by one and keep note of any setting changes that affect the result.",
+        "Run the action once and review the output immediately so you can correct mistakes before continuing.",
+        "Save the successful settings or document the working steps so the same task is faster next time.",
+    ]
+
+
 def _fallback_response(context: str, query: str) -> str:
     selected = _select_relevant_sentences(context, query, limit=3)
     context_steps = _extract_step_actions(context, limit=5)
     query_l = query.lower()
 
-    lines = [
-        "Software Fix Plan:",
-        "1. Confirm scope: identify the exact software name, version, and full error text.",
-        "2. Prepare safely: save your current work and create a restore point or backup.",
-        "3. Reproduce once: perform the same action and note exactly where it fails.",
-        "4. Apply focused fix: follow only one fix path at a time to avoid side effects.",
-        "5. Validate result: repeat the original action and verify the issue is fully resolved.",
-        "6. Harden setup: update software/plugins and document the final working steps.",
+    software_name = _infer_software_name(context, query)
+    is_tutorial = _is_tutorial_query(query)
+
+    normalized_query = query.strip().rstrip("?")
+    title = normalized_query if normalized_query.lower().startswith("how to ") else f"How to {normalized_query}"
+    summary = (
+        f"Use this task-focused guide for {software_name}. Follow the steps in order and verify the result after the export or action completes."
+        if is_tutorial
+        else f"Use this targeted troubleshooting plan for {software_name}. Make one change at a time so you can confirm which fix actually resolves the issue."
+    )
+
+    lines = [f"Title: {title}", f"Summary: {summary}", "", "Steps:"]
+
+    steps = [
+        "Confirm scope: identify the exact software version, affected file, and full error text before changing settings.",
+        "Save your current work and create a backup so you can roll back if one of the fixes changes the project unexpectedly.",
+        "Reproduce the problem once and note the exact action that triggers it.",
+        "Apply one focused fix path at a time instead of changing several settings together.",
+        "Repeat the same workflow to verify the issue is fully resolved.",
+        "Document the working fix and update related software, plugins, or drivers if needed.",
     ]
 
-    if ("background" in query_l and "photo" in query_l) or "remove bg" in query_l:
+    if is_tutorial:
+        steps = _build_tutorial_steps(query, software_name, context_steps)
+    elif ("background" in query_l and "photo" in query_l) or "remove bg" in query_l:
         variants = [
             [
-                "Step 1: Open the photo and launch the background removal tool.",
-                "Step 2: Mark the subject carefully, then refine hair and edge regions.",
-                "Step 3: Clean leftover artifacts with the eraser or mask refinement controls.",
-                "Step 4: Export as PNG and verify transparency on a dark and light background.",
+                "Open the photo and launch the background removal tool.",
+                "Mark the subject carefully, then refine hair and edge regions.",
+                "Clean leftover artifacts with the eraser or mask refinement controls.",
+                "Export as PNG and verify transparency on a dark and light background.",
             ],
             [
-                "Step 1: Import the image and switch to the cutout or remove-background workspace.",
-                "Step 2: Keep the subject, remove the backdrop, and inspect fine boundaries closely.",
-                "Step 3: Adjust feather/smooth settings to avoid jagged edges around the subject.",
-                "Step 4: Save in PNG format to preserve alpha transparency.",
+                "Import the image and switch to the cutout or remove-background workspace.",
+                "Keep the subject, remove the backdrop, and inspect fine boundaries closely.",
+                "Adjust feather and smooth settings to avoid jagged edges around the subject.",
+                "Save in PNG format to preserve alpha transparency.",
             ],
         ]
-        lines = ["Software Fix Plan:"] + [f"{i+1}. {s[8:] if s.lower().startswith('step ') else s}" for i, s in enumerate(random.choice(variants))]
-
+        steps = random.choice(variants)
     elif any(k in query_l for k in ["internet", "no connection", "network", "offline"]):
         variants = [
             [
-                "Step 1: Confirm your device has internet access outside the app (open any other website).",
-                "Step 2: Restart Chrome and your router, then test again.",
-                "Step 3: Open Chrome Incognito mode and retry to rule out extension conflicts.",
-                "Step 4: Disable VPN/proxy temporarily and check system firewall or antivirus rules.",
-                "Step 5: Clear DNS cache and reset network settings if the issue persists.",
+                "Confirm your device has internet access outside the app by opening another website first.",
+                "Restart the app and your router, then test again.",
+                "Retry in private browsing mode or with extensions disabled to rule out conflicts.",
+                "Temporarily disable VPN or proxy settings and check firewall or antivirus rules.",
+                "Clear DNS cache or reset network settings if the issue still appears.",
             ],
             [
-                "Step 1: Verify the URL and test two different websites to confirm the failure scope.",
-                "Step 2: Update Chrome to the latest version and restart the computer.",
-                "Step 3: Disable all extensions, then re-enable one by one to identify the blocker.",
-                "Step 4: Check date/time settings and certificate warnings.",
-                "Step 5: If still failing, reset Chrome settings to defaults and retry.",
+                "Verify the URL and test two different websites to confirm whether the failure is app-specific or system-wide.",
+                "Update the app to the latest stable version and restart the computer.",
+                "Disable all extensions or plugins, then re-enable them one by one to identify the blocker.",
+                "Check system date and time settings together with any certificate warnings.",
+                "If the issue remains, reset the app network-related settings to defaults and retry.",
             ],
         ]
-        lines = ["Software Fix Plan:"] + [f"{i+1}. {s[8:] if s.lower().startswith('step ') else s}" for i, s in enumerate(random.choice(variants))]
-
+        steps = random.choice(variants)
     elif context_steps:
-        lines = ["Software Fix Plan:"]
-        for idx, step in enumerate(context_steps[:5], start=1):
-            lines.append(f"{idx}. {step}")
-        lines.append("6. If unresolved, share exact error text and a screenshot for deeper diagnosis.")
+        steps = context_steps[:5] + ["If unresolved, share exact error text and a screenshot for deeper diagnosis."]
+
+    for idx, step in enumerate(steps, start=1):
+        lines.append(f"{idx}. {step}")
 
     lines.append("")
-    lines.append("Verification checklist:")
-    lines.append("- Restart the software and test the same workflow.")
-    lines.append("- Confirm no new warning/error is introduced.")
-    lines.append("- If shared machine: verify user permissions and network access.")
+    lines.append("Checklist:")
+    if is_tutorial:
+        lines.append("- Confirm the final output opens correctly and matches the expected quality or format.")
+        lines.append("- Check the save location, file name, and export settings before closing the software.")
+        lines.append("- Repeat the workflow once more if you need to confirm the process is now reliable.")
+    else:
+        lines.append("- Restart the software and test the same workflow.")
+        lines.append("- Confirm no new warning or error is introduced.")
+        lines.append("- Verify permissions, plugins, and related system dependencies if the issue affects multiple users.")
+
+    lines.append("")
+    lines.append("Tips:")
+    lines.append("- Keep the exact version number and full error text when asking for a deeper fix.")
+    if is_tutorial:
+        lines.append("- Save a reusable preset or note the successful settings if this is a task you repeat often.")
+    else:
+        lines.append("- Change one setting at a time so the successful fix is easy to identify.")
 
     if selected:
         lines.append("")
-        lines.append("Evidence snippets:")
+        lines.append("Evidence:")
         for i, sentence in enumerate(selected, start=1):
             lines.append(f"{i}. {_shorten(sentence)}")
 

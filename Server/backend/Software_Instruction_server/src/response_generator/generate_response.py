@@ -54,23 +54,11 @@ def generate_detailed_response(query, predicted_type, results_df):
             f"Technical note: {exc}"
         )
 
-    issue_type = str(predicted_type).replace("_", " ").title()
-    intent_hint = "Tutorial guidance" if str(predicted_type) == "how_to" else "Troubleshooting guidance"
-    software_scope = "Mixed"
-    if "software" in results_df.columns:
-        softwares = results_df["software"].dropna().astype(str).unique().tolist()
-        if len(softwares) == 1:
-            software_scope = softwares[0]
-        elif len(softwares) > 1:
-            software_scope = ", ".join(sorted(softwares[:3]))
+    cleaned_answer = ai_answer.strip()
+    if not re.search(r"(?im)^tips:\s*$", cleaned_answer):
+        cleaned_answer += (
+            "\n\nTips:\n"
+            "- If this does not solve your issue, ask again with the exact error text, app version, and the step where it fails.\n"
+        )
 
-    final_response = "\n"
-    final_response += "=" * 58 + "\n"
-    final_response += f"Software Scope: {software_scope}\n"
-    final_response += f"Detected Issue Type: {issue_type}\n"
-    final_response += f"Response Mode: {intent_hint}\n"
-    final_response += "=" * 58 + "\n\n"
-    final_response += ai_answer
-    final_response += "\n\nTip: If this does not solve your issue, ask again with exact error text and app version.\n"
-
-    return final_response
+    return cleaned_answer

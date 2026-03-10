@@ -292,6 +292,107 @@ def _resolve_software_scope(software: Optional[str], available: list[str]) -> Op
     return normalized_available.get(candidate)
 
 
+def _format_scope_label(scope: Optional[str]) -> str:
+    if not scope:
+        return "General software guide"
+    return scope.replace("_", " ").title()
+
+
+def _extract_instruction_items(answer: str, heading: str, bullet_only: bool = False) -> list[str]:
+    if not answer:
+        return []
+
+    lines = answer.replace("\r", "").split("\n")
+    items: list[str] = []
+    in_section = False
+
+    for raw_line in lines:
+        line = raw_line.strip()
+        if not line:
+            if in_section and items:
+                break
+            continue
+
+        if re.match(fr"^{re.escape(heading)}\s*:\s*$", line, flags=re.IGNORECASE):
+            in_section = True
+            continue
+
+        if in_section and re.match(r"^[A-Za-z][A-Za-z ]{1,20}:\s*$", line):
+            break
+
+        if not in_section:
+            continue
+
+        match = re.match(r"^(?:\d+[\.\)]|[-*•])\s*(.+)$", line)
+        if match:
+            value = match.group(1).strip()
+            if value:
+                items.append(value)
+            continue
+
+        if not bullet_only:
+            items.append(line)
+
+    return items
+
+
+def _extract_inline_value(answer: str, label: str) -> Optional[str]:
+    match = re.search(fr"(?im)^{re.escape(label)}\s*:\s*(.+)$", answer or "")
+    if not match:
+        return None
+    value = match.group(1).strip()
+    return value or None
+
+
+def _extract_steps_from_answer(answer: str) -> list[str]:
+    if not answer:
+        return []
+
+    steps: list[str] = []
+    for line in answer.replace("\r", "").split("\n"):
+        cleaned = line.strip()
+        match = re.match(r"^(?:\d+[\.\)]|step\s*\d+\s*[:\.\)-])\s*(.+)$", cleaned, flags=re.IGNORECASE)
+        if match:
+            value = match.group(1).strip()
+            if len(value) >= 10:
+                steps.append(value)
+    return steps
+
+
+def _parse_instruction_response(
+    answer: str,
+    message: str,
+    software_scope: Optional[str],
+    issue_type: str,
+) -> Dict[str, Any]:
+    title = _extract_inline_value(answer, "Title")
+    summary = _extract_inline_value(answer, "Summary")
+    steps = _extract_instruction_items(answer, "Steps") or _extract_steps_from_answer(answer)
+    checklist = _extract_instruction_items(answer, "Checklist", bullet_only=True)
+    tips = _extract_instruction_items(answer, "Tips", bullet_only=True)
+
+    if not title:
+        title = f"{_format_scope_label(software_scope)}: {message.strip().rstrip('?')}"
+
+    if not summary:
+        mode = "tutorial" if issue_type.lower() == "How To".lower() else "troubleshooting"
+        summary = f"Structured {mode} guidance for {_format_scope_label(software_scope)}."
+
+    if not checklist:
+        checklist = [
+            "Verify the result by repeating the same workflow once.",
+            "Confirm no new warning, failure, or quality issue appears.",
+        ]
+
+    return {
+        "title": title,
+        "summary": summary,
+        "steps": steps[:8],
+        "checklist": checklist[:4],
+        "tips": tips[:4],
+    }
+
+
 @app.get("/software-instruction/softwares")
 def list_softwares():
     logger.info("📦 Listing software instruction scopes")
@@ -340,11 +441,19 @@ def software_instruction_chat(payload: SoftwareInstructionRequest):
 
         issue_type = str(predicted_type).replace("_", " ").title()
         scope = selected_software or "All software"
+        structured = _parse_instruction_response(
+            answer=response_text,
+            message=message,
+            software_scope=selected_software,
+            issue_type=issue_type,
+        )
 
         return {
             "software_scope": scope,
             "issue_type": issue_type,
+            "response_mode": "Tutorial guidance" if str(predicted_type) == "how_to" else "Troubleshooting guidance",
             "answer": response_text,
+            **structured,
             "evidence": evidence,
             "result_count": 0 if results is None else int(len(results)),
         }
