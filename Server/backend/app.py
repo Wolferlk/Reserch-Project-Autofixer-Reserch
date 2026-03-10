@@ -387,7 +387,7 @@ def _parse_instruction_response(
     return {
         "title": title,
         "summary": summary,
-        "steps": steps[:8],
+        "steps": steps[:40],
         "checklist": checklist[:4],
         "tips": tips[:4],
     }
@@ -440,6 +440,14 @@ def software_instruction_chat(payload: SoftwareInstructionRequest):
                     evidence.append({"rank": idx, "snippet": snippet})
 
         issue_type = str(predicted_type).replace("_", " ").title()
+        response_mode = "Tutorial guidance" if str(predicted_type) == "how_to" else "Troubleshooting guidance"
+        if results is not None and not results.empty and "source" in results.columns:
+            top_source = str(results.iloc[0].get("source", "")).strip().lower()
+            top_doc_kind = str(results.iloc[0].get("doc_kind", "")).strip().lower()
+            if top_source == "processed_steps" and top_doc_kind == "installation":
+                issue_type = "How To"
+                response_mode = "Tutorial guidance"
+
         scope = selected_software or "All software"
         structured = _parse_instruction_response(
             answer=response_text,
@@ -451,7 +459,7 @@ def software_instruction_chat(payload: SoftwareInstructionRequest):
         return {
             "software_scope": scope,
             "issue_type": issue_type,
-            "response_mode": "Tutorial guidance" if str(predicted_type) == "how_to" else "Troubleshooting guidance",
+            "response_mode": response_mode,
             "answer": response_text,
             **structured,
             "evidence": evidence,

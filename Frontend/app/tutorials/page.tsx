@@ -185,7 +185,7 @@ function extractSteps(answer: string): string[] {
     }
   }
 
-  if (candidates.length >= 2) return candidates.slice(0, 10)
+  if (candidates.length >= 2) return candidates.slice(0, 40)
 
   const sentenceSteps = answer
     .replace(/\n/g, ' ')
@@ -193,7 +193,7 @@ function extractSteps(answer: string): string[] {
     .map((s) => s.trim())
     .filter((s) => s.length > 12 && !isNoiseLine(s))
 
-  return sentenceSteps.slice(0, 8)
+  return sentenceSteps.slice(0, 40)
 }
 
 function ensureList(values?: string[]): string[] {
