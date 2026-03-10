@@ -23,6 +23,12 @@ interface StepAnalysis {
   warning: string;
 }
 
+interface HistoryEntry {
+  error: string;
+  solution: string;
+  date: string;
+}
+
 const RAW_API_BASE_URL = (
   process.env.NEXT_PUBLIC_API_URL ||
   process.env.NEXT_PUBLIC_RECO_API_URL ||
@@ -77,11 +83,28 @@ export default function Home() {
   const [multiSolutions, setMultiSolutions] = useState<Solution[]>([]);
   const [eli5Mode, setEli5Mode] = useState(false);
   const [showFollowUp, setShowFollowUp] = useState(false);
-  const [userHistory, setUserHistory] = useState<Array<{error: string, solution: string, date: string}>>([]);
+  const [userHistory, setUserHistory] = useState<HistoryEntry[]>([]);
   const [displayedSteps, setDisplayedSteps] = useState<number>(0);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingTexts, setStreamingTexts] = useState<string[]>([]);
   const [completedSteps, setCompletedSteps] = useState<boolean[]>([]);
+  const [lastSubmittedError, setLastSubmittedError] = useState('');
+
+  const normalizeErrorText = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase();
+
+  const shuffleArray = <T,>(items: T[]) => {
+    const copy = [...items];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    return copy;
+  };
+
+  const prepareSolutionForDisplay = (incomingSolution: Solution, shouldShuffle: boolean): Solution => ({
+    ...incomingSolution,
+    steps: shouldShuffle ? shuffleArray(incomingSolution.steps) : incomingSolution.steps,
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -175,15 +198,17 @@ export default function Home() {
   useEffect(() => {
     if (solution) {
       const newEntry = {
-        error: errorText,
+        error: lastSubmittedError || errorText,
         solution: solution.error_name,
         date: new Date().toISOString()
       };
-      const updated = [newEntry, ...userHistory.slice(0, 9)];
-      setUserHistory(updated);
-      localStorage.setItem('errorHistory', JSON.stringify(updated));
+      setUserHistory(prevHistory => {
+        const updated = [newEntry, ...prevHistory.slice(0, 9)];
+        localStorage.setItem('errorHistory', JSON.stringify(updated));
+        return updated;
+      });
     }
-  }, [solution]);
+  }, [solution, lastSubmittedError, errorText]);
 
   // Streaming effect for displaying steps (character-by-character)
   useEffect(() => {
@@ -344,12 +369,20 @@ export default function Home() {
     throw new Error(lastErrorMessage);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!errorText.trim()) {
+  const handleSubmit = async (
+    e?: React.FormEvent,
+    submittedErrorText?: string
+  ) => {
+    e?.preventDefault();
+
+    const queryText = (submittedErrorText ?? errorText).trim();
+    if (!queryText) {
       setError('Please enter an error description');
       return;
     }
+
+    const normalizedQuery = normalizeErrorText(queryText);
+    const shouldShuffle = normalizedQuery === normalizeErrorText(lastSubmittedError);
 
     setLoading(true);
     setError(null);
@@ -358,27 +391,38 @@ export default function Home() {
     setShowMultiSolutions(false);
     setDisplayedSteps(0);
     setIsStreaming(false);
+    setLastSubmittedError(queryText);
+    if (submittedErrorText !== undefined) {
+      setErrorText(queryText);
+    }
 
     try {
       const response = await postToChatbot<Solution>('/detect-error', {
-        user_error: errorText,
+        user_error: queryText,
       });
 
       setTimeout(() => {
-        setSolution(response);
+        setSolution(prepareSolutionForDisplay(response, shouldShuffle));
         setShowFollowUp(true);
         setIsStreaming(true);
         setDisplayedSteps(0);
 
         postToChatbot<{ solutions: Solution[]; total_found: number }>(
-          '/detect-error-multi?limit=3',
+          '/detect-error-multi?limit=5',
           {
-            user_error: errorText,
+            user_error: queryText,
           }
         )
           .then((multiResponse) => {
             if (multiResponse.solutions && multiResponse.solutions.length > 1) {
-              setMultiSolutions(multiResponse.solutions);
+              const preparedSolutions = multiResponse.solutions.map((item, index) =>
+                prepareSolutionForDisplay(item, shouldShuffle && index === 0)
+              );
+              setMultiSolutions(
+                shouldShuffle
+                  ? [preparedSolutions[0], ...shuffleArray(preparedSolutions.slice(1))]
+                  : preparedSolutions
+              );
             }
           })
           .catch(() => {});
@@ -897,8 +941,9 @@ export default function Home() {
                         if (multiSolutions.length > 1) {
                           setShowMultiSolutions(true);
                         } else {
-                          setErrorText(errorText + ' - First solution did not work');
-                          handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+                          const retryText = `${errorText} - First solution did not work`;
+                          setErrorText(retryText);
+                          handleSubmit(undefined, retryText);
                         }
                       }}
                       className="px-4 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 hover:bg-yellow-500/20 transition-all text-sm font-semibold"
@@ -1001,7 +1046,7 @@ export default function Home() {
                   key={idx}
                   onClick={() => {
                     setErrorText(entry.error);
-                    handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+                    handleSubmit(undefined, entry.error);
                   }}
                   className="w-full text-left p-3 bg-white/[0.03] border border-white/10 rounded-lg hover:bg-white/[0.06] hover:border-white/20 transition-all text-sm"
                 >
