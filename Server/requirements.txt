@@ -7,7 +7,7 @@ pydantic>=2.8
 # Core data and ML
 numpy>=1.26,<3.0
 pandas>=2.2
-scikit-learn>=1.5
+scikit-learn==1.7.2
 scipy>=1.12
 joblib>=1.4
 sentence-transformers>=3.0

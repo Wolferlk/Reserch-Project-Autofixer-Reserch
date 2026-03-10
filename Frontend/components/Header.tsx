@@ -9,8 +9,8 @@ import { Menu, X, Zap } from 'lucide-react'
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/error-fixer', label: 'Fix Error' },
-  { href: '/screenshot-scanner', label: 'Screenshot' },
-  { href: '/tutorials', label: 'Tutorials' },
+  { href: '/screenshot-scanner', label: 'Upload Image' },
+  { href: '/tutorials', label: 'Softwares' },
   { href: '/hardware-repair', label: 'Hardware' },
   { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },

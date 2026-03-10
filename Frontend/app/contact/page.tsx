@@ -14,6 +14,7 @@ export default function Contact() {
   })
   const [isLoading, setIsLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState('')
 
   const subjects = [
     { value: 'bug', label: 'Bug Report' },
@@ -74,6 +75,10 @@ export default function Contact() {
   ]
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    if (submitError) {
+      setSubmitError('')
+    }
+
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -83,17 +88,20 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setSubmitError('')
 
     try {
-      // Simulate API call to your Python backend
-      // const response = await fetch('/api/contact', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // })
-      // const data = await response.json()
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
 
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      const data = await response.json() as { success?: boolean; message?: string }
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Failed to send message.')
+      }
 
       setSubmitted(true)
       setFormData({
@@ -107,7 +115,8 @@ export default function Contact() {
       // Reset after 5 seconds
       setTimeout(() => setSubmitted(false), 5000)
     } catch (error) {
-      console.error('Error:', error)
+      const message = error instanceof Error ? error.message : 'Failed to send message.'
+      setSubmitError(message)
     } finally {
       setIsLoading(false)
     }

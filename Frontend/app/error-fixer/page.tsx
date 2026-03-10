@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import AdminSubmissionForm from '@/components/AdminSubmissionForm';
 
 interface Solution {
   error_name: string;
@@ -63,6 +65,7 @@ function GlowOrbs() {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [errorText, setErrorText] = useState('');
   const [loading, setLoading] = useState(false);
   const [solution, setSolution] = useState<Solution | null>(null);
@@ -494,30 +497,43 @@ export default function Home() {
                   value={errorText}
                   onChange={(e) => setErrorText(e.target.value)}
                   placeholder={isSupported ? "Type or click microphone to speak your error..." : "Example: I get Black screen on boot when using my PC..."}
-                  className="w-full px-5 py-4 pr-16 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 resize-none transition-all"
+                  className="w-full px-5 py-4 pr-32 bg-white/5 border border-white/10 rounded-xl text-white placeholder-gray-600 focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 resize-none transition-all"
                 />
-                {isSupported && (
+                <div className="absolute right-3 top-3 flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={isListening ? stopListening : startListening}
-                    className={`absolute right-3 top-3 p-3 rounded-lg transition-all duration-300 ${
-                      isListening
-                        ? 'bg-red-500/80 hover:bg-red-600 animate-pulse text-white'
-                        : 'bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400'
-                    }`}
-                    title={isListening ? 'Stop listening' : 'Start voice input'}
+                    onClick={() => router.push('/screenshot-scanner')}
+                    className="p-3 rounded-lg transition-all duration-300 bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400"
+                    title="Open screenshot scanner"
                   >
-                    {isListening ? (
-                      <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
-                      </svg>
-                    ) : (
-                      <svg className="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                      </svg>
-                    )}
+                    <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7a2 2 0 012-2h2l1.172-1.172A2 2 0 019.586 3h4.828a2 2 0 011.414.586L17 5h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7z" />
+                      <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                    </svg>
                   </button>
-                )}
+                  {isSupported && (
+                    <button
+                      type="button"
+                      onClick={isListening ? stopListening : startListening}
+                      className={`p-3 rounded-lg transition-all duration-300 ${
+                        isListening
+                          ? 'bg-red-500/80 hover:bg-red-600 animate-pulse text-white'
+                          : 'bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400'
+                      }`}
+                      title={isListening ? 'Stop listening' : 'Start voice input'}
+                    >
+                      {isListening ? (
+                        <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 012 0v4a1 1 0 11-2 0V7zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V7a1 1 0 00-1-1z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
               </div>
               {isListening && (
                 <div className="mt-2 flex items-center space-x-2 text-sm text-cyan-400">
@@ -920,6 +936,12 @@ export default function Home() {
                 </p>
               </div>
             )}
+
+            <AdminSubmissionForm
+              page="error-fixer"
+              defaultErrorName={solution.error_name}
+              generatedOutput={solution.steps.join('\n')}
+            />
           </div>
         )}
 
