@@ -1,0 +1,9 @@
+CNN Training Summary
+====================
+Epochs: 15
+Batch Size: 16
+Learning Rate: 0.001
+Classes (12): ['Stucked_Screens', 'app_crash', 'black_screen', 'bsod', 'cmd_errors', 'dialog_errors', 'driver_errors', 'installer_errors', 'login_errors', 'network_errors', 'normal_application', 'normal_desktop']
+
+Final Train Accuracy: 0.5061
+Final Val Accuracy: 0.1327
