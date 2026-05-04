@@ -25,6 +25,33 @@ MEDIA_BASE_URL = os.getenv(
 
 
 REQUIRED_ASSETS = (
+    # Screenshot scanner: image classifier, KB retriever, and generator model.
+    (
+        Path("models/classifier/cnn_classifier.pt"),
+        40_000_000,
+    ),
+    (
+        Path("models/retriever/tfidf.pkl"),
+        100_000,
+    ),
+    (
+        Path("models/retriever/kb_vectors.pkl"),
+        500_000,
+    ),
+    (
+        Path("data/processed/kb_dataset.csv"),
+        500_000,
+    ),
+    (
+        Path("models/generator/model.safetensors"),
+        250_000_000,
+    ),
+    (
+        Path("models/generator/spiece.model"),
+        500_000,
+    ),
+
+    # Error fixer chatbot.
     (
         Path("backend/chatbot_winerror/ml_backend/models/sentence_transformer/model.safetensors"),
         80_000_000,
@@ -90,14 +117,14 @@ def download_asset(relative_path: Path, target: Path) -> None:
 
 
 def main() -> int:
-    print(f"Checking chatbot model assets from {MEDIA_BASE_URL}")
+    print(f"Checking backend model assets from {MEDIA_BASE_URL}")
     for relative_path, min_size in REQUIRED_ASSETS:
         target = SERVER_ROOT / relative_path
         if asset_needs_download(target, min_size):
             download_asset(relative_path, target)
         validate_asset(target, min_size)
 
-    print("Chatbot model assets are ready.")
+    print("Backend model assets are ready.")
     return 0
 
 
@@ -105,5 +132,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception as exc:
-        print(f"Chatbot asset check failed: {exc}", file=sys.stderr)
+        print(f"Backend asset check failed: {exc}", file=sys.stderr)
         raise SystemExit(1)

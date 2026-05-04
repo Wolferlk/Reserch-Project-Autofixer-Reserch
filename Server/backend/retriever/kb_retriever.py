@@ -4,8 +4,9 @@ from pathlib import Path
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-DATASET_PATH = Path("data/processed/kb_dataset.csv")
-MODEL_DIR = Path("models/retriever")
+SERVER_ROOT = Path(__file__).resolve().parents[2]
+DATASET_PATH = SERVER_ROOT / "data" / "processed" / "kb_dataset.csv"
+MODEL_DIR = SERVER_ROOT / "models" / "retriever"
 MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
 VECTORIZER_PATH = MODEL_DIR / "tfidf.pkl"

@@ -1,11 +1,13 @@
 import torch
 from torchvision import transforms
 from PIL import Image
+from pathlib import Path
 
 from backend.classifier.model import ScreenshotCNN
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-MODEL_PATH = "models/classifier/cnn_classifier.pt"
+SERVER_ROOT = Path(__file__).resolve().parents[2]
+MODEL_PATH = SERVER_ROOT / "models" / "classifier" / "cnn_classifier.pt"
 
 # Load checkpoint once
 checkpoint = torch.load(MODEL_PATH, map_location=DEVICE)

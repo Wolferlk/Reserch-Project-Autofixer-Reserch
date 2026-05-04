@@ -38,9 +38,10 @@ MODEL_ASSET_BRANCH=Production
 ```
 
 The Docker build runs `Server/scripts/ensure_chatbot_assets.py`. This prevents the
-chatbot from starting with Git LFS pointer files, which otherwise causes
-`/chatbot/detect-error` to return 503 with a safetensors deserialization error.
-By default it downloads required chatbot assets from:
+backend from starting or responding with Git LFS pointer files instead of real ML
+assets. Pointer files can break `/analyze` for screenshot scanning and
+`/chatbot/detect-error` for text error fixing. By default it downloads required
+assets from:
 
 ```text
 https://media.githubusercontent.com/media/Wolferlk/Reserch-Project-Autofixer-Reserch/Production/Server
@@ -55,6 +56,7 @@ the same paths under `Server/`.
 ```text
 https://your-railway-domain.railway.app/
 https://your-railway-domain.railway.app/docs
+https://your-railway-domain.railway.app/models/status
 https://your-railway-domain.railway.app/chatbot/health
 ```
 

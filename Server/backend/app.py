@@ -25,6 +25,8 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("AUTO_FIXER")
+SERVER_ROOT = Path(__file__).resolve().parents[1]
+LFS_POINTER_PREFIX = b"version https://git-lfs.github.com/spec/v1"
 
 # --------------------------------------------------
 # App setup
@@ -36,7 +38,12 @@ DEFAULT_CORS_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://reserch-project-autofixer-reserch.vercel.app",
+    "https://reserch-project-autofixer-reserch-git-3e305c-wolferlks-projects.vercel.app",
 ]
+DEFAULT_CORS_ORIGIN_REGEX = (
+    r"https://reserch-project-autofixer-reserch(?:-[a-z0-9-]+)?\.vercel\.app"
+)
 
 
 def _configured_cors_origins() -> list[str]:
@@ -52,9 +59,14 @@ def _configured_cors_origins() -> list[str]:
     return sorted(set(DEFAULT_CORS_ORIGINS + configured))
 
 
+def _configured_cors_origin_regex() -> str:
+    return os.getenv("CORS_ORIGIN_REGEX", DEFAULT_CORS_ORIGIN_REGEX).strip()
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_configured_cors_origins(),
+    allow_origin_regex=_configured_cors_origin_regex(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -63,6 +75,22 @@ app.add_middleware(
 SERVICE_STATUS: Dict[str, str] = {}
 SOFTWARE_INSTRUCTION_STATUS = "not_loaded"
 _SOFTWARE_INSTRUCTION_CACHE: Dict[str, Any] = {}
+CLASSIFIER_STATUS: Dict[str, Any] = {"status": "not_loaded"}
+MODEL_ASSET_PATHS = {
+    "classifier": Path("models/classifier/cnn_classifier.pt"),
+    "retriever_tfidf": Path("models/retriever/tfidf.pkl"),
+    "retriever_vectors": Path("models/retriever/kb_vectors.pkl"),
+    "knowledge_base": Path("data/processed/kb_dataset.csv"),
+    "generator_model": Path("models/generator/model.safetensors"),
+    "generator_tokenizer": Path("models/generator/spiece.model"),
+    "chatbot_transformer": Path(
+        "backend/chatbot_winerror/ml_backend/models/sentence_transformer/model.safetensors"
+    ),
+    "chatbot_database": Path(
+        "backend/chatbot_winerror/ml_backend/models/error_database_no_emb.pkl"
+    ),
+    "chatbot_embeddings": Path("backend/chatbot_winerror/ml_backend/models/embeddings.npy"),
+}
 
 
 @app.middleware("http")
@@ -104,6 +132,53 @@ _mount_service("recommendation", "/recommendation", "backend.recomondation_servi
 # --------------------------------------------------
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _is_lfs_pointer(path: Path) -> bool:
+    try:
+        with path.open("rb") as handle:
+            return handle.read(len(LFS_POINTER_PREFIX)) == LFS_POINTER_PREFIX
+    except FileNotFoundError:
+        return False
+
+
+def _asset_status(relative_path: str | Path, min_size: int = 1) -> Dict[str, Any]:
+    relative = Path(relative_path)
+    path = relative if relative.is_absolute() else SERVER_ROOT / relative
+    exists = path.exists()
+    size = path.stat().st_size if exists else 0
+    is_pointer = _is_lfs_pointer(path) if exists else False
+    ready = exists and not is_pointer and size >= min_size
+    return {
+        "path": relative.as_posix(),
+        "exists": exists,
+        "size_bytes": size,
+        "is_lfs_pointer": is_pointer,
+        "ready": ready,
+    }
+
+
+def _model_asset_statuses() -> Dict[str, Any]:
+    return {
+        name: _asset_status(path)
+        for name, path in MODEL_ASSET_PATHS.items()
+    }
+
+
+def _screenshot_model_status() -> Dict[str, Any]:
+    assets = {
+        "classifier": _asset_status("models/classifier/cnn_classifier.pt", 40_000_000),
+        "retriever_vectorizer": _asset_status("models/retriever/tfidf.pkl", 100_000),
+        "retriever_vectors": _asset_status("models/retriever/kb_vectors.pkl", 500_000),
+        "knowledge_base": _asset_status("data/processed/kb_dataset.csv", 500_000),
+        "generator_model": _asset_status("models/generator/model.safetensors", 250_000_000),
+        "generator_tokenizer": _asset_status("models/generator/spiece.model", 500_000),
+    }
+    return {
+        "assets": assets,
+        "classifier_runtime": CLASSIFIER_STATUS,
+        "retriever_runtime": "loaded" if retriever is not None else "unavailable",
+    }
 
 # --------------------------------------------------
 # Load retriever once
@@ -259,6 +334,16 @@ def services_status():
     return {
         **SERVICE_STATUS,
         "software_instruction": SOFTWARE_INSTRUCTION_STATUS,
+        "screenshot_scanner": _screenshot_model_status(),
+    }
+
+
+@app.get("/models/status")
+def models_status():
+    logger.info("🧠 Model status requested")
+    return {
+        "screenshot_scanner": _screenshot_model_status(),
+        "assets": _model_asset_statuses(),
     }
 
 
@@ -543,7 +628,7 @@ async def analyze_image(image: UploadFile = File(...)):
     logger.info("🧠 Running image classification...")
 
     classification = {
-        "label": None,
+        "category": None,
         "confidence": None,
         "error": None,
     }
@@ -552,16 +637,31 @@ async def analyze_image(image: UploadFile = File(...)):
         from backend.classifier.infer import classify_image
 
         classification = classify_image(str(image_path))
+        CLASSIFIER_STATUS.clear()
+        CLASSIFIER_STATUS.update(
+            {
+                "status": "loaded",
+                "device": getattr(sys.modules.get("backend.classifier.infer"), "DEVICE", "unknown"),
+            }
+        )
 
         logger.info(
             f"✅ Classification result: "
-            f"{classification.get('label')} "
+            f"{classification.get('category')} "
             f"(confidence={classification.get('confidence')})"
         )
 
     except Exception as e:
-        logger.warning(f"⚠️ Image classification failed: {e}")
-        classification["error"] = "Image classification failed"
+        error_detail = f"{e.__class__.__name__}: {e}"
+        logger.warning(f"⚠️ Image classification failed: {error_detail}")
+        CLASSIFIER_STATUS.clear()
+        CLASSIFIER_STATUS.update(
+            {
+                "status": "failed",
+                "error": error_detail,
+            }
+        )
+        classification["error"] = error_detail
 
     # --------------------------------------------------
     # 3️⃣ OCR
