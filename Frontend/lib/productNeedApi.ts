@@ -1,7 +1,7 @@
-const RAW_API_BASE_URL = (process.env.NEXT_PUBLIC_RECO_API_URL || 'http://localhost:8001').replace(/\/+$/, '');
-const API_BASE_URL = RAW_API_BASE_URL.endsWith('/recommendation')
-  ? RAW_API_BASE_URL
-  : `${RAW_API_BASE_URL}/recommendation`;
+import { recommendationApiBaseUrl, requireApiBaseUrl, resolveApiBaseUrl } from './apiBase';
+
+const RAW_API_BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_RECO_API_URL, process.env.NEXT_PUBLIC_API_URL);
+const API_BASE_URL = recommendationApiBaseUrl(RAW_API_BASE_URL);
 
 export type ProductNeedRequest = {
   text: string;
@@ -34,6 +34,7 @@ export type ProductNeedResponse = {
 };
 
 export async function fetchProductNeedRecommend(payload: ProductNeedRequest): Promise<ProductNeedResponse> {
+  const apiBaseUrl = requireApiBaseUrl(API_BASE_URL, 'Recommendation backend');
   const body = {
     text: payload.text,
     budget: payload.budget ?? 'medium',
@@ -41,7 +42,7 @@ export async function fetchProductNeedRecommend(payload: ProductNeedRequest): Pr
     user_district: payload.user_district ?? payload.district,
   };
 
-  const res = await fetch(`${API_BASE_URL}/product_need_recommend`, {
+  const res = await fetch(`${apiBaseUrl}/product_need_recommend`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),

@@ -51,6 +51,46 @@ REQUIRED_ASSETS = (
         500_000,
     ),
 
+    # Tutorial/software-instruction service.
+    (
+        Path("backend/Software_Instruction_server/data/processed_dataset/train.csv"),
+        100_000,
+    ),
+    (
+        Path("backend/Software_Instruction_server/data/models/problem_classifier.pkl"),
+        1_000,
+    ),
+
+    # Hardware repair and recommendation service.
+    (
+        Path("backend/recomondation_service/backend/reco_model.pkl"),
+        100_000,
+    ),
+    (
+        Path("backend/recomondation_service/backend/reco_features.json"),
+        100,
+    ),
+    (
+        Path("backend/recomondation_service/backend/nlp_error_model_error_type.pkl"),
+        100_000,
+    ),
+    (
+        Path("backend/recomondation_service/backend/nlp_error_model_product.pkl"),
+        10_000,
+    ),
+    (
+        Path("backend/recomondation_service/backend/product_need_model.pkl"),
+        1_000_000,
+    ),
+    (
+        Path("backend/recomondation_service/data/shops.csv"),
+        100_000,
+    ),
+    (
+        Path("backend/recomondation_service/data/products.csv"),
+        1_000_000,
+    ),
+
     # Error fixer chatbot.
     (
         Path("backend/chatbot_winerror/ml_backend/models/sentence_transformer/model.safetensors"),
@@ -98,7 +138,7 @@ def download_asset(relative_path: Path, target: Path) -> None:
     url = f"{MEDIA_BASE_URL}/{relative_path.as_posix()}"
     target.parent.mkdir(parents=True, exist_ok=True)
 
-    print(f"Downloading chatbot asset: {relative_path}")
+    print(f"Downloading backend asset: {relative_path}")
     try:
         with urllib.request.urlopen(url, timeout=120) as response:
             with tempfile.NamedTemporaryFile(delete=False, dir=str(target.parent)) as tmp:

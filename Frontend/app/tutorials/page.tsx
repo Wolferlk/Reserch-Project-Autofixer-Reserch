@@ -14,6 +14,7 @@ import {
   Wand2,
 } from 'lucide-react'
 import AdminSubmissionForm from '@/components/AdminSubmissionForm'
+import { requireApiBaseUrl, resolveApiBaseUrl } from '@/lib/apiBase'
 
 type TutorialChatApiResponse = {
   answer?: string
@@ -46,10 +47,8 @@ type GenerationResult = {
 }
 
 const API_BASE_URL = (
-  process.env.NEXT_PUBLIC_API_URL ||
-  process.env.NEXT_PUBLIC_RECO_API_URL ||
-  'http://localhost:8001'
-).replace(/\/+$/, '')
+  resolveApiBaseUrl(process.env.NEXT_PUBLIC_API_URL, process.env.NEXT_PUBLIC_RECO_API_URL)
+)
 
 const QUICK_PROMPTS = [
   'Fix startup crash after update',
@@ -73,7 +72,8 @@ function wait(ms: number) {
 }
 
 async function fetchSoftwareList(): Promise<string[]> {
-  const response = await fetch(`${API_BASE_URL}/software-instruction/softwares`)
+  const apiBaseUrl = requireApiBaseUrl(API_BASE_URL, 'Tutorial backend')
+  const response = await fetch(`${apiBaseUrl}/software-instruction/softwares`)
   if (!response.ok) {
     throw new Error(`Software list API error ${response.status}`)
   }
@@ -83,7 +83,8 @@ async function fetchSoftwareList(): Promise<string[]> {
 }
 
 async function getAIResponse(message: string, software: string): Promise<TutorialChatApiResponse> {
-  const response = await fetch(`${API_BASE_URL}/software-instruction/chat`, {
+  const apiBaseUrl = requireApiBaseUrl(API_BASE_URL, 'Tutorial backend')
+  const response = await fetch(`${apiBaseUrl}/software-instruction/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -227,9 +228,9 @@ export default function TutorialsPage() {
         const list = await fetchSoftwareList()
         if (!mounted) return
         setSoftwareOptions(list)
-      } catch {
+      } catch (err) {
         if (!mounted) return
-        setSoftwareError('Could not load software list from backend.')
+        setSoftwareError(err instanceof Error ? err.message : 'Could not load software list from backend.')
       } finally {
         if (mounted) setSoftwareLoading(false)
       }
@@ -319,8 +320,8 @@ export default function TutorialsPage() {
         issueType: responseData.issue_type?.trim() || 'General',
         generatedAt: new Date(),
       })
-    } catch {
-      setGenerationError('Failed to generate steps. Please try again and confirm backend is running.')
+    } catch (err) {
+      setGenerationError(err instanceof Error ? err.message : 'Failed to generate steps. Please try again and confirm backend is running.')
     } finally {
       stopModelAnimation()
       setGenerating(false)

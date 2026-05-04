@@ -36,12 +36,12 @@ import { ErrorSuggestions } from '@/components/ErrorSuggestions';
 import CompareShopsModal from '@/components/CompareShopsModal';
 import BestMatch from '@/components/SmartFixPlan';
 import { fetchProductNeedRecommend, ProductNeedResponse } from '@/lib/productNeedApi';
+import { recommendationApiBaseUrl, requireApiBaseUrl, resolveApiBaseUrl } from '@/lib/apiBase';
 
 // API Configuration - always target mounted recommendation service
-const RAW_API_BASE_URL = (process.env.NEXT_PUBLIC_RECO_API_URL || "http://localhost:8001").replace(/\/+$/, "");
-const API_BASE_URL = RAW_API_BASE_URL.endsWith("/recommendation")
-  ? RAW_API_BASE_URL
-  : `${RAW_API_BASE_URL}/recommendation`;
+const RAW_API_BASE_URL = resolveApiBaseUrl(process.env.NEXT_PUBLIC_RECO_API_URL, process.env.NEXT_PUBLIC_API_URL);
+const API_BASE_URL = recommendationApiBaseUrl(RAW_API_BASE_URL);
+const getRecommendationApiBaseUrl = () => requireApiBaseUrl(API_BASE_URL, 'Recommendation backend');
 
 // Districts in Sri Lanka - Used for location-based filtering
 const DISTRICTS = [
@@ -366,7 +366,7 @@ export default function Home() {
 
       // Try primary endpoint
       try {
-        response = await fetch(`${API_BASE_URL}/nlp/detect_error_type`, {
+        response = await fetch(`${getRecommendationApiBaseUrl()}/nlp/detect_error_type`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text: text.trim() })
@@ -389,7 +389,7 @@ export default function Home() {
         
         // Fallback to legacy endpoint
         try {
-          response = await fetch(`${API_BASE_URL}/detect_error_type`, {
+          response = await fetch(`${getRecommendationApiBaseUrl()}/detect_error_type`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ text: text.trim() })
@@ -672,7 +672,7 @@ export default function Home() {
         toast.info(`🔍 Auto-searching repair centers in ${filters.district}...`, { duration: 2000 });
         setLoading(true);
         try {
-          const response = await fetch(`${API_BASE_URL}/rank_auto`, {
+          const response = await fetch(`${getRecommendationApiBaseUrl()}/rank_auto`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1234,7 +1234,7 @@ export default function Home() {
     
     console.log('Sending request to /rank_auto:', requestBody);
     
-    const response = await fetch(`${API_BASE_URL}/rank_auto`, {
+    const response = await fetch(`${getRecommendationApiBaseUrl()}/rank_auto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(requestBody)
@@ -1359,7 +1359,7 @@ export default function Home() {
         }
       }
 
-      const response = await fetch(`${API_BASE_URL}/rank_products_auto`, {
+      const response = await fetch(`${getRecommendationApiBaseUrl()}/rank_products_auto`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1581,7 +1581,7 @@ export default function Home() {
   // Feedback function
   const handleFeedback = async (feedback: FeedbackEvent) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/feedback`, {
+      const response = await fetch(`${getRecommendationApiBaseUrl()}/feedback`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedback)
@@ -1649,9 +1649,10 @@ export default function Home() {
       setShopDetails(null);
       
       try {
-        const url = `${API_BASE_URL}/shop_details?shop_id=${encodeURIComponent(item.shop_id)}`;
+        const apiBaseUrl = getRecommendationApiBaseUrl();
+        const url = `${apiBaseUrl}/shop_details?shop_id=${encodeURIComponent(item.shop_id)}`;
         console.log('Fetching shop details from:', url);
-        console.log('API_BASE_URL:', API_BASE_URL);
+        console.log('API_BASE_URL:', apiBaseUrl);
         
         // Add timeout to fetch request
         const controller = new AbortController();
@@ -1674,7 +1675,7 @@ export default function Home() {
           if (fetchError.name === 'AbortError') {
             throw new Error('Request timeout - backend server may be slow or unresponsive');
           } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
-            throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running.`);
+            throw new Error(`Cannot connect to backend server at ${apiBaseUrl}. Please ensure the backend is running.`);
           } else {
             throw fetchError;
           }
@@ -1766,9 +1767,10 @@ export default function Home() {
       setProductDetails(null);
       
       try {
-        const url = `${API_BASE_URL}/product_details?product_id=${encodeURIComponent(item.product_id)}`;
+        const apiBaseUrl = getRecommendationApiBaseUrl();
+        const url = `${apiBaseUrl}/product_details?product_id=${encodeURIComponent(item.product_id)}`;
         console.log('Fetching product details from:', url);
-        console.log('API_BASE_URL:', API_BASE_URL);
+        console.log('API_BASE_URL:', apiBaseUrl);
         
         // Add timeout to fetch request
         const controller = new AbortController();
@@ -1791,7 +1793,7 @@ export default function Home() {
           if (fetchError.name === 'AbortError') {
             throw new Error('Request timeout - backend server may be slow or unresponsive');
           } else if (fetchError.message?.includes('Failed to fetch') || fetchError.message?.includes('NetworkError')) {
-            throw new Error(`Cannot connect to backend server at ${API_BASE_URL}. Please ensure the backend is running.`);
+            throw new Error(`Cannot connect to backend server at ${apiBaseUrl}. Please ensure the backend is running.`);
           } else {
             throw fetchError;
           }
@@ -2006,7 +2008,7 @@ export default function Home() {
     try {
       // Add 3 second delay for analyzing animation
       const [apiResponse] = await Promise.all([
-        fetch(`${API_BASE_URL}/full_recommendation`, {
+        fetch(`${getRecommendationApiBaseUrl()}/full_recommendation`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

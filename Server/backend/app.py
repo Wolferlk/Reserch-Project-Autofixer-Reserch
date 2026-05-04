@@ -83,6 +83,23 @@ MODEL_ASSET_PATHS = {
     "knowledge_base": Path("data/processed/kb_dataset.csv"),
     "generator_model": Path("models/generator/model.safetensors"),
     "generator_tokenizer": Path("models/generator/spiece.model"),
+    "software_instruction_dataset": Path(
+        "backend/Software_Instruction_server/data/processed_dataset/train.csv"
+    ),
+    "software_instruction_classifier": Path(
+        "backend/Software_Instruction_server/data/models/problem_classifier.pkl"
+    ),
+    "recommendation_rank_model": Path("backend/recomondation_service/backend/reco_model.pkl"),
+    "recommendation_rank_features": Path("backend/recomondation_service/backend/reco_features.json"),
+    "recommendation_error_nlp": Path(
+        "backend/recomondation_service/backend/nlp_error_model_error_type.pkl"
+    ),
+    "recommendation_product_nlp": Path(
+        "backend/recomondation_service/backend/nlp_error_model_product.pkl"
+    ),
+    "recommendation_product_need": Path("backend/recomondation_service/backend/product_need_model.pkl"),
+    "recommendation_shops": Path("backend/recomondation_service/data/shops.csv"),
+    "recommendation_products": Path("backend/recomondation_service/data/products.csv"),
     "chatbot_transformer": Path(
         "backend/chatbot_winerror/ml_backend/models/sentence_transformer/model.safetensors"
     ),
