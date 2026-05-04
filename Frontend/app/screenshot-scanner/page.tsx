@@ -81,6 +81,12 @@ const LOADING_STAGES = [
   '✅ Finalizing response...',
 ]
 
+const API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_RECO_API_URL ||
+  'http://localhost:8001'
+).replace(/\/+$/, '')
+
 const formatLogTime = () =>
   new Date().toLocaleTimeString('en-GB', { hour12: false })
 
@@ -150,7 +156,7 @@ export default function ScreenshotScanner() {
     const form = new FormData()
     form.append('image', file)
     try {
-      const res  = await fetch('http://127.0.0.1:8001/analyze', { method: 'POST', body: form })
+      const res  = await fetch(`${API_BASE_URL}/analyze`, { method: 'POST', body: form })
       const data = await res.json()
       pushLog('🏁 Analyze request completed')
       setResult(data)

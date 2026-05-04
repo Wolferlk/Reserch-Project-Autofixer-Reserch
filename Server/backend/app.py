@@ -10,11 +10,11 @@ import time
 import re
 import html
 import random
+import os
 from typing import Dict, Any, Optional
 
 from backend.ocr.ocr_engine import extract_text, clean_text
 from backend.retriever.kb_retriever import KBRetriever
-from backend.generator.infer_generator import generate_fix
 
 # --------------------------------------------------
 # Logging setup
@@ -31,17 +31,30 @@ logger = logging.getLogger("AUTO_FIXER")
 # --------------------------------------------------
 app = FastAPI(title="Auto Fixer V6 – AI Troubleshooting System")
 
-# ✅ CORS FIX
-origins = [
+DEFAULT_CORS_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
 
+
+def _configured_cors_origins() -> list[str]:
+    configured = []
+    for env_name in ("FRONTEND_URL", "CORS_ORIGINS"):
+        raw_value = os.getenv(env_name, "")
+        configured.extend(
+            origin.strip().rstrip("/")
+            for origin in raw_value.split(",")
+            if origin.strip()
+        )
+
+    return sorted(set(DEFAULT_CORS_ORIGINS + configured))
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=_configured_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -96,9 +109,34 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 # Load retriever once
 # --------------------------------------------------
 logger.info("📚 Loading knowledge base retriever...")
-retriever = KBRetriever()
-retriever.load()
-logger.info("✅ Knowledge base loaded")
+retriever: Optional[KBRetriever] = None
+try:
+    retriever = KBRetriever()
+    retriever.load()
+    logger.info("✅ Knowledge base loaded")
+except Exception as exc:
+    logger.warning(
+        "⚠️ Knowledge base unavailable; /analyze will use fallback steps only (%s: %s)",
+        exc.__class__.__name__,
+        exc,
+    )
+
+
+def _generate_fix_with_model(prompt: str, file_id: str) -> str:
+    try:
+        from backend.generator.infer_generator import generate_fix
+
+        return generate_fix(
+            prompt,
+            variation_seed=hash(file_id) % (2**31),
+        )
+    except Exception as exc:
+        logger.warning(
+            "⚠️ Fix generation model unavailable; using fallback steps (%s: %s)",
+            exc.__class__.__name__,
+            exc,
+        )
+        return ""
 
 
 def _strip_step_prefix(text: str) -> str:
@@ -553,7 +591,7 @@ async def analyze_image(image: UploadFile = File(...)):
 
     try:
         if cleaned_text.strip():
-            kb_results = retriever.query(cleaned_text, top_k=3)
+            kb_results = retriever.query(cleaned_text, top_k=3) if retriever else []
             logger.info(f"✅ Found {len(kb_results)} related articles")
         else:
             logger.info("ℹ️ Skipping KB query (no extracted text)")
@@ -584,9 +622,9 @@ async def analyze_image(image: UploadFile = File(...)):
                 + cleaned_text
             )
 
-            raw_generated_steps = generate_fix(
+            raw_generated_steps = _generate_fix_with_model(
                 prompt,
-                variation_seed=hash(file_id) % (2**31),
+                file_id=file_id,
             )
             generated_steps, fix_plan_steps = _build_professional_fix_plan(
                 cleaned_text=cleaned_text,

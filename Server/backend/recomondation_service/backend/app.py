@@ -354,19 +354,33 @@ app = FastAPI(
     description="ML-powered recommendations for repair/product shops with explainable reasons.",
 )
 
-# CORS configuration - allow all local network origins for development
-# For production, restrict to specific domains
+DEFAULT_CORS_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:3001",
+    "http://192.168.56.1:3000",
+    "http://192.168.1.1:3000",
+    "http://192.168.0.1:3000",
+    "http://10.0.0.1:3000",
+]
+
+
+def get_cors_origins() -> list[str]:
+    configured = []
+    for env_name in ("FRONTEND_URL", "CORS_ORIGINS"):
+        raw_value = os.getenv(env_name, "")
+        configured.extend(
+            origin.strip().rstrip("/")
+            for origin in raw_value.split(",")
+            if origin.strip()
+        )
+
+    return sorted(set(DEFAULT_CORS_ORIGINS + configured))
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://192.168.56.1:3000",  # Network IP for frontend
-        "http://192.168.1.1:3000",  # Common router IP
-        "http://192.168.0.1:3000",  # Another common router IP
-        "http://10.0.0.1:3000",  # Another common network IP
-    ],
+    allow_origins=get_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     allow_headers=["*"],
