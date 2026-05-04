@@ -33,13 +33,29 @@ FRONTEND_URL=https://your-frontend.vercel.app
 CORS_ORIGINS=https://your-frontend.vercel.app
 SUPABASE_URL=your_supabase_project_url
 SUPABASE_KEY=your_supabase_key
+# Optional: override when deploying from a branch other than Production.
+MODEL_ASSET_BRANCH=Production
 ```
+
+The Docker build runs `Server/scripts/ensure_chatbot_assets.py`. This prevents the
+chatbot from starting with Git LFS pointer files, which otherwise causes
+`/chatbot/detect-error` to return 503 with a safetensors deserialization error.
+By default it downloads required chatbot assets from:
+
+```text
+https://media.githubusercontent.com/media/Wolferlk/Reserch-Project-Autofixer-Reserch/Production/Server
+```
+
+If the repository is private or the assets are hosted elsewhere, set
+`MODEL_ASSET_BASE_URL` to a public or authenticated asset base URL that contains
+the same paths under `Server/`.
 
 8. Test the backend:
 
 ```text
 https://your-railway-domain.railway.app/
 https://your-railway-domain.railway.app/docs
+https://your-railway-domain.railway.app/chatbot/health
 ```
 
 ## Frontend: Vercel
