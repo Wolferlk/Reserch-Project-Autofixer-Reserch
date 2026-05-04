@@ -50,8 +50,8 @@ https://your-railway-domain.railway.app/docs
 4. Add environment variables:
 
 ```env
-NEXT_PUBLIC_API_URL=https://your-railway-domain.railway.app
-NEXT_PUBLIC_RECO_API_URL=https://your-railway-domain.railway.app
+NEXT_PUBLIC_API_URL=https://reserch-project-autofixer-reserch-production-f66f.up.railway.app
+NEXT_PUBLIC_RECO_API_URL=https://reserch-project-autofixer-reserch-production-f66f.up.railway.app
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_optional
 ```
 
