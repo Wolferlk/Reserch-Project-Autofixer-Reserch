@@ -27,6 +27,8 @@ env/
 # Env files
 .env
 .env.*
+!.env.example
+!**/.env.example
 
 # Build / distribution
 dist/
@@ -45,6 +47,7 @@ frontend/build/
 *.h5
 *.onnx
 *.bin
+!models/classifier/cnn_classifier.pt
 
 # Project-specific generated data
 uploads/

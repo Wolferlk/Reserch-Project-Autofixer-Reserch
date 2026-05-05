@@ -1,15 +1,23 @@
 import cv2
 import pytesseract
 import re
+import os
+import shutil
 from PIL import Image
 import numpy as np
 
 # --------------------------------------------------
-# Tesseract path (Windows)
+# Tesseract path
 # --------------------------------------------------
-pytesseract.pytesseract.tesseract_cmd = (
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe"
-)
+TESSERACT_CMD = os.getenv("TESSERACT_CMD")
+WINDOWS_TESSERACT_CMD = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+
+if TESSERACT_CMD:
+    pytesseract.pytesseract.tesseract_cmd = TESSERACT_CMD
+elif os.path.exists(WINDOWS_TESSERACT_CMD):
+    pytesseract.pytesseract.tesseract_cmd = WINDOWS_TESSERACT_CMD
+elif shutil.which("tesseract"):
+    pytesseract.pytesseract.tesseract_cmd = "tesseract"
 
 # --------------------------------------------------
 # OCR CORE (RAW-FIRST, MULTI-PSM)

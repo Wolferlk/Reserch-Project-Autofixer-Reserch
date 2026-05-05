@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { AuthProvider } from '@/components/auth/AuthProvider'
@@ -14,11 +14,6 @@ export const metadata: Metadata = {
   title: 'Auto Fixer - AI Error Fixing Platform',
   description: 'Fix any error with AI-powered solutions. Text errors, screenshots, tutorials, and hardware issues - all in one platform.',
   generator: 'aiautofix.app',
-  viewport: {
-    width: 'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-  },
   icons: {
     icon: [
       {
@@ -36,6 +31,12 @@ export const metadata: Metadata = {
     ],
     apple: '/apple-icon.png',
   },
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({

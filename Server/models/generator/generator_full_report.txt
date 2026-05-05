@@ -1,0 +1,17 @@
+AUTO FIXER – GENERATOR MODEL REPORT
+==================================================
+
+Model: flan-t5
+Device: CPU
+Training Samples: 719
+Validation Samples: 180
+Epochs: 10
+Learning Rate: 0.0003
+Batch Size (Train): 4
+Batch Size (Eval): 4
+Weight Decay: 0.01
+Final Training Loss: 0.2814
+Final Validation Loss: 0.0979
+Training Time (minutes): 368.24      #5HOURS
+Eval Samples / Sec: 1.079
+Eval Steps / Sec: 0.27

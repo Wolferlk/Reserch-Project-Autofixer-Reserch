@@ -81,6 +81,20 @@ const LOADING_STAGES = [
   '✅ Finalizing response...',
 ]
 
+const CONFIGURED_API_BASE_URL = (
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_RECO_API_URL ||
+  ''
+).replace(/\/+$/, '')
+
+const getApiBaseUrl = () => {
+  if (CONFIGURED_API_BASE_URL) return CONFIGURED_API_BASE_URL
+  if (typeof window !== 'undefined' && ['localhost', '127.0.0.1'].includes(window.location.hostname)) {
+    return 'http://localhost:8001'
+  }
+  return ''
+}
+
 const formatLogTime = () =>
   new Date().toLocaleTimeString('en-GB', { hour12: false })
 
@@ -150,13 +164,32 @@ export default function ScreenshotScanner() {
     const form = new FormData()
     form.append('image', file)
     try {
-      const res  = await fetch('http://127.0.0.1:8001/analyze', { method: 'POST', body: form })
-      const data = await res.json()
+      const apiBaseUrl = getApiBaseUrl()
+      if (!apiBaseUrl) {
+        throw new Error('Backend API URL is not configured. Set NEXT_PUBLIC_API_URL in Vercel and redeploy the frontend.')
+      }
+
+      const res  = await fetch(`${apiBaseUrl}/analyze`, { method: 'POST', body: form })
+      let data: any = null
+      try {
+        data = await res.json()
+      } catch {
+        data = null
+      }
+
+      if (!res.ok) {
+        const detail = data?.detail || `Backend returned ${res.status}`
+        throw new Error(detail)
+      }
+
       pushLog('🏁 Analyze request completed')
+      if (data?.image_classification?.error) {
+        pushLog(`⚠️ Classification model unavailable: ${data.image_classification.error}`)
+      }
       setResult(data)
-    } catch {
+    } catch (err: any) {
       pushLog('❌ Analyze request failed')
-      setError('Failed to analyze image. Make sure the API server is running.')
+      setError(err?.message || 'Failed to analyze image. Make sure the API server is running.')
     } finally {
       if (logTimerRef.current) {
         clearInterval(logTimerRef.current)
@@ -172,6 +205,9 @@ export default function ScreenshotScanner() {
   }
 
   const cls        = result?.image_classification
+  const classificationLabel = cls?.category || cls?.label
+  const classificationConfidence = typeof cls?.confidence === 'number' ? cls.confidence : null
+  const classificationError = cls?.error ? String(cls.error) : null
   const apiFixSteps = Array.isArray(result?.fix_plan_steps)
     ? result.fix_plan_steps.map((s: unknown) => String(s).trim()).filter(Boolean)
     : []
@@ -413,7 +449,9 @@ export default function ScreenshotScanner() {
                   </div>
                   <div>
                     <p className="text-white font-semibold text-sm">Analysis Complete</p>
-                    <p className="text-gray-500 text-xs">Screenshot scanned and classified successfully</p>
+                    <p className="text-gray-500 text-xs">
+                      {classificationError ? 'Screenshot scanned; classification model needs backend attention' : 'Screenshot scanned and classified successfully'}
+                    </p>
                   </div>
                 </div>
                 <motion.button whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }} onClick={reset}
@@ -450,12 +488,18 @@ export default function ScreenshotScanner() {
                         </div>
                         <span className="text-xs font-bold text-blue-400 uppercase tracking-widest">Classification</span>
                       </div>
-                      <p className="text-white font-bold text-base mb-1">{cls.category}</p>
-                      <p className="text-gray-500 text-xs mb-4">Confidence score</p>
-                      <div className="flex items-center gap-3">
-                        <ConfidenceBar value={cls.confidence} color="#3b82f6" />
-                        <span className="text-blue-400 font-bold text-sm flex-shrink-0">{(cls.confidence * 100).toFixed(0)}%</span>
-                      </div>
+                      <p className="text-white font-bold text-base mb-1">{classificationLabel || 'Classification unavailable'}</p>
+                      {classificationConfidence !== null ? (
+                        <>
+                          <p className="text-gray-500 text-xs mb-4">Confidence score</p>
+                          <div className="flex items-center gap-3">
+                            <ConfidenceBar value={classificationConfidence} color="#3b82f6" />
+                            <span className="text-blue-400 font-bold text-sm flex-shrink-0">{(classificationConfidence * 100).toFixed(0)}%</span>
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-amber-300 text-xs leading-relaxed break-words">{classificationError || 'The backend did not return a confidence score.'}</p>
+                      )}
                     </motion.div>
                   )}
 
@@ -564,7 +608,7 @@ export default function ScreenshotScanner() {
 
               <AdminSubmissionForm
                 page="screenshot-scanner"
-                defaultErrorName={cls?.category || topArticle?.title || ''}
+                defaultErrorName={classificationLabel || topArticle?.title || ''}
                 generatedOutput={steps.join('\n') || String(result.generated_fix || '')}
               />
 

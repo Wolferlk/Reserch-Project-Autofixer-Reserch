@@ -94,9 +94,10 @@ run*/
 .env
 .env.local
 .env.*.local
-.env.example
 secrets/
 credentials/
+!.env.example
+!**/.env.example
 
 # OS
 .DS_Store
@@ -143,3 +144,51 @@ runs/
 *.rar
 *.zip
 .gitignore
+
+# Runtime ML/data artifacts required by the Railway backend.
+# These are committed through Git LFS via .gitattributes.
+!Server/models/
+!Server/models/classifier/
+!Server/models/classifier/cnn_classifier.pt
+!Server/models/retriever/
+!Server/models/retriever/tfidf.pkl
+!Server/models/retriever/kb_vectors.pkl
+!Server/models/generator/
+!Server/models/generator/added_tokens.json
+!Server/models/generator/config.json
+!Server/models/generator/generation_config.json
+!Server/models/generator/model.safetensors
+!Server/models/generator/special_tokens_map.json
+!Server/models/generator/spiece.model
+!Server/models/generator/tokenizer_config.json
+
+!Server/data/
+Server/data/*
+!Server/data/processed/
+Server/data/processed/*
+!Server/data/processed/kb_dataset.csv
+
+!Server/backend/chatbot_winerror/ml_backend/models/
+!Server/backend/chatbot_winerror/ml_backend/models/**
+
+!Server/backend/recomondation_service/data/
+!Server/backend/recomondation_service/data/shops.csv
+!Server/backend/recomondation_service/data/products.csv
+!Server/backend/recomondation_service/backend/reco_model.pkl
+!Server/backend/recomondation_service/backend/reco_features.json
+!Server/backend/recomondation_service/backend/nlp_error_model_error_type.pkl
+!Server/backend/recomondation_service/backend/nlp_error_model_product.pkl
+!Server/backend/recomondation_service/backend/product_need_model.pkl
+
+!Server/backend/Software_Instruction_server/data/
+Server/backend/Software_Instruction_server/data/*
+!Server/backend/Software_Instruction_server/data/processed_dataset/
+!Server/backend/Software_Instruction_server/data/processed_dataset/train.csv
+!Server/backend/Software_Instruction_server/data/models/
+!Server/backend/Software_Instruction_server/data/models/problem_classifier.pkl
+!Server/backend/Software_Instruction_server/data/Prossedsteps/
+!Server/backend/Software_Instruction_server/data/Prossedsteps/**
+!Server/backend/Software_Instruction_server/data/cache/
+Server/backend/Software_Instruction_server/data/cache/*
+!Server/backend/Software_Instruction_server/data/cache/processed_steps_index.json
+!Server/backend/Software_Instruction_server/data/cache/processed_steps_vocabulary.txt

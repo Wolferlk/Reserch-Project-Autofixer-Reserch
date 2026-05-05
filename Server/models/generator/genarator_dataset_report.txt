@@ -1,0 +1,28 @@
+AUTO FIXER – GENERATOR DATASET REPORT
+=============================================
+
+Run time        : 2026-01-05T10:42:03.779882
+Input file      : data\processed\kb_dataset.csv
+Output directory: data\generator
+
+DATA SUMMARY
+--------------------
+Original rows           : 899
+Rows after cleaning     : 899
+Rows removed (NaN)      : 0
+
+SPLIT DETAILS
+--------------------
+Training rows           : 719
+Validation rows         : 180
+Split ratio             : 80% train / 20% validation
+
+PROMPT FORMAT EXAMPLE
+--------------------
+Generate step-by-step fixing instructions for the following error:
+Title: fix windows activation error 0xc004f074
+Tags: activation, license, windows
+
+EXPECTED OUTPUT EXAMPLE
+--------------------
+Check internet connection and system date/time. ,  Run slmgr.vbs /dlv to view license details. ,  Use Activation Troubleshooter (Settings -> Update & Security -> Activation). ,  Re-enter product key or contact Microsoft support if KMS issues.

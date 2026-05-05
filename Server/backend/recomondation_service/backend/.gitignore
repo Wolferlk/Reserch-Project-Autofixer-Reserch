@@ -25,6 +25,10 @@ Thumbs.db
 *.pkl
 *.h5
 *.hdf5
+!reco_model.pkl
+!nlp_error_model_error_type.pkl
+!nlp_error_model_product.pkl
+!product_need_model.pkl
 
 # Data files
 *.csv
