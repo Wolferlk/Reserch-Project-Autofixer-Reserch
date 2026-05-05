@@ -57,7 +57,7 @@ export default function Contact() {
     {
       icon: Phone,
       label: 'Phone',
-      value: '+94 12345678',
+      value: '+94 778 231 121',
       color: 'from-cyan-500 to-teal-500',
     },
     {

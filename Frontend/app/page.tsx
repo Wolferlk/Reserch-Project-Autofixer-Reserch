@@ -148,10 +148,42 @@ export default function Home() {
   ]
 
   const reviews = [
-    { name: 'Sarah K.',  role: 'Senior Developer', text: 'Auto Fixer saved me 3 hours debugging a Webpack config. Absolutely wild how fast it diagnosed the issue.', stars: 5, av: 'S' },
-    { name: 'James T.',  role: 'CS Student',        text: 'Used to spend days on Stack Overflow. Now I screenshot the error and get a fix in 10 seconds.',            stars: 5, av: 'J' },
-    { name: 'Priya M.',  role: 'DevOps Engineer',   text: 'The hardware diagnostics spotted a failing SSD before it caused data loss. A literal lifesaver.',           stars: 5, av: 'P' },
-  ]
+  {
+    name: 'Kasun P.',
+    role: 'Software Engineer - Colombo',
+    text: 'AutoFixer AI fixed win os  error in seconds. Normally I spend hours debugging, but this saved my time instantly. Super useful tool!',
+    stars: 5,
+    av: 'K'
+  },
+  {
+    name: 'Nadeesha S.',
+    role: 'IT Undergraduate - SLIIT',
+    text: 'I just uploaded my error screenshot and got the exact fix within seconds. This is way better than searching on Stack Overflow all day.',
+    stars: 5,
+    av: 'N'
+  },
+  {
+    name: 'Ravindu H.',
+    role: 'Freelancer - Galle',
+    text: 'My laptop had a weird system error and AutoFixer AI guided me step-by-step to fix it. Didn’t even need a technician!',
+    stars: 5,
+    av: 'R'
+  },
+  {
+    name: 'Tharushi W.',
+    role: 'QA Engineer - Colombo',
+    text: 'The AI detected a hidden issue in my system logs that I completely missed. Honestly impressed with how accurate it is.',
+    stars: 4,
+    av: 'T'
+  },
+  {
+    name: 'Dilshan M.',
+    role: 'Computer Technician - Kandy',
+    text: 'I use this with my clients now. It speeds up diagnosing PC issues and gives clear solutions. Huge productivity boost!',
+    stars: 5,
+    av: 'D'
+  }
+]
 
   return (
     <div className="min-h-screen bg-black text-white overflow-x-hidden">

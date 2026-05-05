@@ -117,8 +117,8 @@ export default function Footer() {
             <div className="space-y-3 mb-8">
               {[
                 { icon: Mail,   text: 'support@autofixer.ai' },
-                { icon: Phone,  text: '+1 (555) 123-4567'    },
-                { icon: MapPin, text: 'San Francisco, CA'    },
+                { icon: Phone,  text: '+94 77 823 1121'    },
+                { icon: MapPin, text: 'Malabe, Colombo, Sri lanka  '    },
               ].map(({ icon: Icon, text }) => (
                 <div key={text} className="flex items-center gap-3 text-gray-400 group cursor-default">
                   <div className="w-8 h-8 rounded-lg border border-white/8 bg-white/5 flex items-center justify-center flex-shrink-0 group-hover:border-cyan-500/30 transition-colors">
@@ -135,7 +135,7 @@ export default function Footer() {
               <div className="flex gap-2">
                 <input
                   type="email"
-                  placeholder="your@email.com"
+                  placeholder="Info@autoixer.com"
                   className="flex-1 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-cyan-500/50 focus:bg-white/8 transition-all min-w-0"
                 />
                 <motion.button
@@ -159,7 +159,7 @@ export default function Footer() {
           <div className="flex items-center gap-1 text-gray-600 text-xs">
             <span>Built with</span>
             <span className="text-red-400 mx-0.5">♥</span>
-            <span>using Next.js & AI</span>
+            <span>NEXTGEN TEAM For SLIIT RESERCH </span>
             <ArrowUpRight size={11} className="ml-0.5 opacity-50" />
           </div>
         </div>
