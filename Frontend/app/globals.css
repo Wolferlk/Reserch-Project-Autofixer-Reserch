@@ -384,3 +384,14 @@ body::before {
 .hardware-repair-theme .text-gray-500 {
   color: rgb(148 163 184) !important;
 }
+
+.hardware-repair-theme .hardware-select,
+.hardware-repair-theme .hardware-input,
+.hardware-repair-theme .hardware-textarea {
+  color-scheme: dark;
+}
+
+.hardware-repair-theme .hardware-select option {
+  background-color: rgb(15 23 42);
+  color: rgb(248 250 252);
+}
