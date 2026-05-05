@@ -86,6 +86,13 @@ const HARDWARE_AI_STEPS = [
   'Scoring best-fit component options'
 ];
 
+const FIELD_CONTROL_CLASS =
+  'w-full rounded-lg border border-white/15 bg-slate-950/75 px-3 py-2.5 text-sm text-slate-100 shadow-sm outline-none transition placeholder:text-slate-500 focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/30';
+const TEXTAREA_CONTROL_CLASS = `${FIELD_CONTROL_CLASS} hardware-textarea resize-y pr-24`;
+const INPUT_CONTROL_CLASS = `${FIELD_CONTROL_CLASS} hardware-input`;
+const SELECT_CONTROL_CLASS = `${FIELD_CONTROL_CLASS} hardware-select cursor-pointer appearance-none pr-10`;
+const SELECT_OPTION_CLASS = 'bg-slate-900 text-slate-100';
+
 
 export default function Home() {
   // ============================================================================
@@ -2146,7 +2153,7 @@ export default function Home() {
                     }}
                     placeholder="e.g., 'Blue screen after update', 'GPU overheating during gaming', 'Need SSD upgrade'"
                     rows={3}
-                    className="w-full px-3 py-2 pr-20 border border-white/20 bg-black/30 text-gray-100 rounded-md shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    className={TEXTAREA_CONTROL_CLASS}
                   />
                   
                   {/* Error Suggestions Dropdown */}
@@ -2543,21 +2550,26 @@ export default function Home() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
-                  <div className="flex gap-2">
-                    <select
-                      value={filters.district}
-                      onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="">Select District</option>
-                      {DISTRICTS.map(district => (
-                        <option key={district} value={district}>{district}</option>
-                      ))}
-                    </select>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative min-w-0 flex-1">
+                      <select
+                        value={filters.district}
+                        onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
+                        className={SELECT_CONTROL_CLASS}
+                      >
+                        <option className={SELECT_OPTION_CLASS} value="">Select District</option>
+                        {DISTRICTS.map(district => (
+                          <option className={SELECT_OPTION_CLASS} key={district} value={district}>{district}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        ▼
+                      </span>
+                    </div>
                     <button
                       onClick={getCurrentLocation}
                       disabled={locationLoading}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-cyan-500 focus:outline-none focus:ring-2 focus:ring-cyan-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Get current location"
                     >
                       {locationLoading ? (
@@ -2597,21 +2609,21 @@ export default function Home() {
         {/* Products Section */}
         {activeTab === 'products' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl shadow-xl border-2 border-green-200 p-6">
+            <div className="bg-slate-950/70 rounded-xl shadow-xl border border-emerald-400/25 p-6 backdrop-blur-md">
               {/* Section Header */}
-              <div className="mb-6 pb-4 border-b-2 border-green-200">
+              <div className="mb-6 pb-4 border-b border-white/15">
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">🛒</span>
                   <div>
-                    <h2 className="text-2xl font-bold text-gray-900">Product Search</h2>
-                    <p className="text-sm text-gray-600">Search for PC components and accessories</p>
+                    <h2 className="text-2xl font-bold text-white">Product Search</h2>
+                    <p className="text-sm text-gray-300">Search for PC components and accessories</p>
                   </div>
                 </div>
               </div>
 
               {/* Search Bar */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-200 mb-2">
                   What product are you looking for?
                 </label>
                 <div className="relative">
@@ -2640,14 +2652,14 @@ export default function Home() {
                     }}
                     placeholder="e.g., 'Need RAM upgrade', 'Looking for SSD', 'GPU for gaming'"
                     rows={3}
-                    className="w-full px-3 py-2 pr-20 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                    className={TEXTAREA_CONTROL_CLASS}
                   />
                   
                   {/* Product Suggestions Dropdown */}
                   {showSuggestions && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
-                      <div className="px-3 py-2 bg-green-50 border-b border-gray-200">
-                        <p className="text-xs font-semibold text-green-700">🛒 Similar Product Searches</p>
+                    <div className="absolute z-50 w-full mt-1 max-h-60 overflow-auto rounded-lg border border-white/15 bg-slate-900/95 shadow-lg backdrop-blur-md">
+                      <div className="border-b border-white/10 bg-emerald-500/10 px-3 py-2">
+                        <p className="text-xs font-semibold text-emerald-200">🛒 Similar Product Searches</p>
                       </div>
                       {generateProductSuggestions(searchQuery).map((suggestion, idx) => (
                         <button
@@ -2670,10 +2682,10 @@ export default function Home() {
                             setSearchQuery(suggestion);
                             setShowSuggestions(false);
                           }}
-                          className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-green-50 hover:text-green-700 transition-colors border-b border-gray-100 last:border-b-0 focus:bg-green-50 focus:outline-none cursor-pointer"
+                          className="w-full cursor-pointer border-b border-white/10 px-4 py-3 text-left text-sm text-slate-200 transition-colors last:border-b-0 hover:bg-emerald-500/10 hover:text-emerald-200 focus:bg-emerald-500/10 focus:outline-none"
                         >
                           <div className="flex items-center gap-2">
-                            <span className="text-green-600 text-xs">→</span>
+                            <span className="text-emerald-300 text-xs">→</span>
                             <span>{suggestion}</span>
                           </div>
                         </button>
@@ -2723,15 +2735,15 @@ export default function Home() {
 
               {/* Product Detection Result */}
               {detectionResult && detectionResult.type === 'product' && (
-                <div className="mt-3 animate-in slide-in-from-top-2 duration-300 bg-green-50 border-2 border-green-300 rounded-lg p-4 shadow-md">
+                <div className="mt-3 animate-in slide-in-from-top-2 duration-300 rounded-lg border border-emerald-400/40 bg-emerald-500/10 p-4 shadow-md">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-green-900">Product Detected:</p>
-                        <p className="text-lg font-bold text-green-700">{detectionResult.category}</p>
+                        <p className="text-sm font-semibold text-emerald-200">Product Detected:</p>
+                        <p className="text-lg font-bold text-white">{detectionResult.category}</p>
                       </div>
                     </div>
-                    <div className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-xs font-medium">
+                    <div className="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-medium text-emerald-100">
                       PRODUCT
                     </div>
                   </div>
@@ -2741,22 +2753,27 @@ export default function Home() {
               {/* Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
-                  <div className="flex gap-2">
-                    <select
-                      value={filters.district}
-                      onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                    >
-                      <option value="">Select District</option>
-                      {DISTRICTS.map(district => (
-                        <option key={district} value={district}>{district}</option>
-                      ))}
-                    </select>
+                  <label className="block text-sm font-medium text-gray-200 mb-1">District</label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="relative min-w-0 flex-1">
+                      <select
+                        value={filters.district}
+                        onChange={(e) => setFilters(prev => ({ ...prev, district: e.target.value }))}
+                        className={SELECT_CONTROL_CLASS}
+                      >
+                        <option className={SELECT_OPTION_CLASS} value="">Select District</option>
+                        {DISTRICTS.map(district => (
+                          <option className={SELECT_OPTION_CLASS} key={district} value={district}>{district}</option>
+                        ))}
+                      </select>
+                      <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                        ▼
+                      </span>
+                    </div>
                     <button
                       onClick={getCurrentLocation}
                       disabled={locationLoading}
-                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500 focus:outline-none focus:ring-2 focus:ring-emerald-400/40 disabled:cursor-not-allowed disabled:opacity-50"
                       title="Get current location"
                     >
                       {locationLoading ? (
@@ -2784,7 +2801,7 @@ export default function Home() {
               {/* Search Button */}
               <button
                 onClick={handleSearch}
-                disabled={loading || !searchQuery.trim()}
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-green-600 to-green-700 text-white py-3 px-4 rounded-md hover:from-green-700 hover:to-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold shadow-md hover:shadow-lg"
               >
                 {loading ? 'Searching...' : !searchQuery.trim() ? 'Browse Products' : 'Search Products'}
@@ -2839,7 +2856,7 @@ export default function Home() {
                     }}
                     placeholder="e.g., 'I want to speed up my pc', 'low fps when gaming', 'wifi keeps disconnecting'"
                     rows={3}
-                    className="w-full px-3 py-2 pr-20 border border-white/20 bg-black/30 text-gray-100 rounded-md shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+                    className={TEXTAREA_CONTROL_CLASS}
                   />
                   
                   {speechSupported && (
@@ -3333,12 +3350,12 @@ export default function Home() {
             </div>
             
             {/* Product Filters */}
-            <div className="bg-white rounded-xl shadow-md p-6 mb-6 border border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Filters</h3>
+            <div className="bg-slate-950/70 rounded-xl shadow-md p-6 mb-6 border border-white/15 backdrop-blur-md">
+              <h3 className="text-lg font-semibold text-white mb-4">Filters</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Price Range Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
                     Price Range (LKR)
                   </label>
                   <div className="space-y-2">
@@ -3351,7 +3368,7 @@ export default function Home() {
                           const val = parseInt(e.target.value) || 0;
                           setProductFilters(prev => ({ ...prev, minPrice: val }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className={INPUT_CONTROL_CLASS}
                         placeholder="Min"
                       />
                       <span className="text-gray-500">-</span>
@@ -3363,7 +3380,7 @@ export default function Home() {
                           const val = parseInt(e.target.value) || 1000000;
                           setProductFilters(prev => ({ ...prev, maxPrice: val }));
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                        className={INPUT_CONTROL_CLASS}
                         placeholder="Max"
                       />
                     </div>
@@ -3376,45 +3393,55 @@ export default function Home() {
 
                 {/* Brand Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
                     Brand
                   </label>
-                  <select
-                    value={productFilters.selectedBrand}
-                    onChange={(e) => setProductFilters(prev => ({ ...prev, selectedBrand: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">All Brands</option>
-                    {Array.from(new Set(allProducts.map(p => p.brand).filter(Boolean))).sort().map(brand => (
-                      <option key={brand} value={brand}>{brand}</option>
-                    ))}
-                  </select>
+                  <div className="relative">
+                    <select
+                      value={productFilters.selectedBrand}
+                      onChange={(e) => setProductFilters(prev => ({ ...prev, selectedBrand: e.target.value }))}
+                      className={SELECT_CONTROL_CLASS}
+                    >
+                      <option className={SELECT_OPTION_CLASS} value="">All Brands</option>
+                      {Array.from(new Set(allProducts.map(p => p.brand).filter(Boolean))).sort().map(brand => (
+                        <option className={SELECT_OPTION_CLASS} key={brand} value={brand}>{brand}</option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                      ▼
+                    </span>
+                  </div>
                 </div>
 
                 {/* GB Filter */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-gray-200 mb-2">
                     Storage/Memory (GB)
                   </label>
-                  <select
-                    value={productFilters.selectedGB}
-                    onChange={(e) => setProductFilters(prev => ({ ...prev, selectedGB: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  >
-                    <option value="">All Sizes</option>
-                    {Array.from(new Set(
-                      allProducts
-                        .map(p => {
-                          // Extract GB from model or specifications
-                          const text = `${p.model || ''} ${p.specifications ? JSON.stringify(p.specifications) : ''}`.toUpperCase();
+                  <div className="relative">
+                    <select
+                      value={productFilters.selectedGB}
+                      onChange={(e) => setProductFilters(prev => ({ ...prev, selectedGB: e.target.value }))}
+                      className={SELECT_CONTROL_CLASS}
+                    >
+                      <option className={SELECT_OPTION_CLASS} value="">All Sizes</option>
+                      {Array.from(new Set(
+                        allProducts
+                          .map(p => {
+                            // Extract GB from model or specifications
+                            const text = `${p.model || ''} ${p.specifications ? JSON.stringify(p.specifications) : ''}`.toUpperCase();
                           const gbMatch = text.match(/(\d+)\s*GB/i);
                           return gbMatch ? gbMatch[1] : null;
                         })
-                        .filter(Boolean)
-                    )).sort((a, b) => parseInt(a || '0') - parseInt(b || '0')).map(gb => (
-                      <option key={gb} value={gb}>{gb} GB</option>
-                    ))}
-                  </select>
+                          .filter((gb): gb is string => Boolean(gb))
+                      )).sort((a, b) => parseInt(a || '0') - parseInt(b || '0')).map(gb => (
+                        <option className={SELECT_OPTION_CLASS} key={gb} value={gb}>{gb} GB</option>
+                      ))}
+                    </select>
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
+                      ▼
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="mt-4 flex justify-end">
