@@ -1,0 +1,19 @@
+Screenshot Classifier Training Summary
+=====================================
+trained_at: 2026-03-04T13:48:20
+device: cpu
+epochs_requested: 10
+epochs_ran: 10
+best_epoch: 7
+
+best_val_acc: 0.71484375
+final_train_acc: 0.948161764939626
+final_val_acc: 0.7109375
+
+test_acc: 0.7441441441441441
+
+batch_size: 64
+learning_rate: 0.0003
+weight_decay: 0.0001
+num_classes: 19
+classes: ['Stucked_Screens', 'app_crash', 'black_screen', 'browser_errors', 'bsod', 'cmd_errors', 'dialog_errors', 'driver_errors', 'file_explorer_errors', 'installer_errors', 'login_errors', 'network_errors', 'normal_application', 'normal_desktop', 'normal_installer', 'normal_terminal', 'powershell_errors', 'system_notifications', 'update_errors']
